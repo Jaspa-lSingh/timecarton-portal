@@ -1,69 +1,113 @@
-# Welcome to your Lovable project
 
-## Project info
+# ShiftMaster - Employee Scheduling & Payroll Management System
 
-**URL**: https://lovable.dev/projects/47eb62ca-b11a-4aea-a34f-eb22a91d834f
+![ShiftMaster Logo](https://example.com/logo.png)
 
-## How can I edit this code?
+## Overview
 
-There are several ways of editing your application.
+ShiftMaster is a comprehensive web application designed to streamline employee scheduling and payroll management. Built with modern technologies, it provides an intuitive interface for administrators to manage schedules, track employee hours, and process payroll, while allowing employees to view their schedules, log hours, and access pay information.
 
-**Use Lovable**
+## Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/47eb62ca-b11a-4aea-a34f-eb22a91d834f) and start prompting.
+### For Administrators
+- **Dashboard**: Get a quick overview of upcoming shifts, pending time-off requests, and important metrics.
+- **Employee Management**: Add, edit, and manage employee information and permissions.
+- **Schedule Creation**: Create and manage employee work schedules.
+- **Time Tracking**: Review and approve employee time cards.
+- **Payroll Processing**: Calculate and process payroll based on hours worked.
+- **Reports**: Generate reports on labor costs, scheduling efficiency, and more.
 
-Changes made via Lovable will be committed automatically to this repo.
+### For Employees
+- **Dashboard**: View upcoming shifts and important announcements.
+- **Schedule View**: See personal work schedule and request time off.
+- **Time Clock**: Clock in/out and view hours worked.
+- **Profile Management**: Update personal information and preferences.
+- **Pay Statements**: View pay history and current pay period details.
 
-**Use your preferred IDE**
+## Technology Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Frontend
+- **React**: UI library for building the user interface
+- **Vite**: Next-generation frontend tooling
+- **TypeScript**: For type-safe code
+- **Tailwind CSS**: Utility-first CSS framework
+- **Shadcn/UI**: High-quality UI components
+- **React Router**: For client-side routing
+- **Tanstack Query**: For API data fetching and state management
+- **Recharts**: For data visualization
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Backend (Planned)
+- **Django**: Python web framework
+- **Django REST Framework**: For building RESTful APIs
+- **PostgreSQL**: Database for data storage
 
-Follow these steps:
+## Getting Started
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Installation and Setup
 
-# Step 3: Install the necessary dependencies.
-npm i
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/shiftmaster.git
+   cd shiftmaster
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+2. Install dependencies:
+   ```
+   npm install
+   # or
+   yarn install
+   ```
 
-**Edit a file directly in GitHub**
+3. Start the development server:
+   ```
+   npm run dev
+   # or
+   yarn dev
+   ```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+4. Open your browser and navigate to `http://localhost:5173`
 
-**Use GitHub Codespaces**
+### Demo Accounts
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+For testing purposes, you can use the following demo accounts:
 
-## What technologies are used for this project?
+- **Administrator**:
+  - Email: admin@example.com
+  - Password: password
 
-This project is built with .
+- **Employee**:
+  - Email: employee@example.com
+  - Password: password
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Deployment
 
-## How can I deploy this project?
+This application can be deployed to any static site hosting service:
 
-Simply open [Lovable](https://lovable.dev/projects/47eb62ca-b11a-4aea-a34f-eb22a91d834f) and click on Share -> Publish.
+1. Build the application:
+   ```
+   npm run build
+   # or
+   yarn build
+   ```
 
-## I want to use a custom domain - is that possible?
+2. Deploy the contents of the `dist` directory to your hosting service.
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## Future Enhancements
+
+- Mobile application for on-the-go access
+- Integration with popular accounting software
+- Advanced reporting and analytics
+- AI-powered scheduling recommendations
+- Employee performance tracking
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
