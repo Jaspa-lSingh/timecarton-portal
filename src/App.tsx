@@ -15,10 +15,15 @@ import NotFound from "./pages/NotFound";
 // Admin Pages
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminSchedule from "./pages/admin/Schedule";
+import AdminEmployees from "./pages/admin/Employees";
+import AdminTimeTracking from "./pages/admin/TimeTracking";
+import AdminPayroll from "./pages/admin/Payroll";
 
 // Employee Pages
 import EmployeeDashboard from "./pages/employee/Dashboard";
 import EmployeeSchedule from "./pages/employee/Schedule";
+import EmployeeTimeTracking from "./pages/employee/TimeTracking";
+import EmployeePayroll from "./pages/employee/Payroll";
 import EmployeeProfile from "./pages/employee/Profile";
 
 const queryClient = new QueryClient({
@@ -64,7 +69,7 @@ const App = () => (
             path="/admin/employees" 
             element={
               <ProtectedRoute allowedRole="admin" requiredPermission="manage_employees">
-                <div>Employees Page (Coming Soon)</div>
+                <AdminEmployees />
               </ProtectedRoute>
             } 
           />
@@ -72,7 +77,7 @@ const App = () => (
             path="/admin/time-tracking" 
             element={
               <ProtectedRoute allowedRole="admin" requiredPermission="manage_time_tracking">
-                <div>Time Tracking Page (Coming Soon)</div>
+                <AdminTimeTracking />
               </ProtectedRoute>
             } 
           />
@@ -80,7 +85,7 @@ const App = () => (
             path="/admin/payroll" 
             element={
               <ProtectedRoute allowedRole="admin" requiredPermission="manage_payroll">
-                <div>Payroll Page (Coming Soon)</div>
+                <AdminPayroll />
               </ProtectedRoute>
             } 
           />
@@ -114,7 +119,7 @@ const App = () => (
             path="/employee/time" 
             element={
               <ProtectedRoute allowedRole="employee" requiredPermission="view_own_timesheet">
-                <div>Time Tracking Page (Coming Soon)</div>
+                <EmployeeTimeTracking />
               </ProtectedRoute>
             } 
           />
@@ -122,7 +127,7 @@ const App = () => (
             path="/employee/pay" 
             element={
               <ProtectedRoute allowedRole="employee" requiredPermission="view_own_payroll">
-                <div>Pay Page (Coming Soon)</div>
+                <EmployeePayroll />
               </ProtectedRoute>
             } 
           />
