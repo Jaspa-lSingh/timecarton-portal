@@ -5,11 +5,12 @@ import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from '@/hooks/use-toast';
 import { UserRole } from '@/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle, Mail, Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
@@ -17,9 +18,44 @@ const LoginForm: React.FC = () => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('employee');
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    email: '',
+    password: ''
+  });
+
+  const validateForm = () => {
+    let valid = true;
+    const newErrors = { email: '', password: '' };
+    
+    // Email validation
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+      valid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Please enter a valid email address';
+      valid = false;
+    }
+    
+    // Password validation
+    if (!password.trim()) {
+      newErrors.password = 'Password is required';
+      valid = false;
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+      valid = false;
+    }
+    
+    setErrors(newErrors);
+    return valid;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -60,38 +96,71 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto p-6 shadow-lg border-t-4 border-t-brand-600 bg-white/95 backdrop-blur-sm">
-      <CardHeader className="space-y-2 text-center">
-        <CardTitle className="text-3xl font-bold">Sign In</CardTitle>
-        <CardDescription className="text-gray-500">Enter your credentials to access your account</CardDescription>
-      </CardHeader>
-      
-      <CardContent>
+    <Card className="w-full border-none shadow-none bg-transparent">
+      <CardContent className="p-0">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-            <Input 
-              id="email"
-              type="email" 
-              placeholder="your.email@example.com" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border-gray-300 focus:ring-brand-600 focus:border-brand-600"
-              required
-            />
+            <Label htmlFor="email" className="text-sm font-medium flex items-center">
+              <Mail className="w-4 h-4 mr-2 text-gray-500" />
+              Email
+            </Label>
+            <div className="relative">
+              <Input 
+                id="email"
+                type="email" 
+                placeholder="your.email@example.com" 
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errors.email) setErrors({...errors, email: ''});
+                }}
+                className={`w-full border-gray-300 focus:ring-brand-600 focus:border-brand-600 pl-3 ${
+                  errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
+                }`}
+              />
+              {errors.email && (
+                <motion.div 
+                  className="text-red-500 text-xs mt-1 flex items-center"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  {errors.email}
+                </motion.div>
+              )}
+            </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-            <Input 
-              id="password"
-              type="password" 
-              placeholder="••••••••" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border-gray-300 focus:ring-brand-600 focus:border-brand-600"
-              required
-            />
+            <Label htmlFor="password" className="text-sm font-medium flex items-center">
+              <Lock className="w-4 h-4 mr-2 text-gray-500" />
+              Password
+            </Label>
+            <div className="relative">
+              <Input 
+                id="password"
+                type="password" 
+                placeholder="••••••••" 
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors({...errors, password: ''});
+                }}
+                className={`w-full border-gray-300 focus:ring-brand-600 focus:border-brand-600 ${
+                  errors.password ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
+                }`}
+              />
+              {errors.password && (
+                <motion.div 
+                  className="text-red-500 text-xs mt-1 flex items-center"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  {errors.password}
+                </motion.div>
+              )}
+            </div>
           </div>
           
           <div className="space-y-2">
@@ -101,11 +170,11 @@ const LoginForm: React.FC = () => {
               onValueChange={(value) => setRole(value as UserRole)}
               className="flex gap-4"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-md border border-gray-100 transition-colors hover:bg-gray-100 cursor-pointer">
                 <RadioGroupItem value="employee" id="employee" />
                 <Label htmlFor="employee" className="cursor-pointer">Employee</Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-md border border-gray-100 transition-colors hover:bg-gray-100 cursor-pointer">
                 <RadioGroupItem value="admin" id="admin" />
                 <Label htmlFor="admin" className="cursor-pointer">Administrator</Label>
               </div>
@@ -114,22 +183,31 @@ const LoginForm: React.FC = () => {
           
           <Button 
             type="submit" 
-            className="w-full bg-brand-600 hover:bg-brand-700 transition-colors" 
+            className="w-full bg-brand-600 hover:bg-brand-700 transition-colors mt-6" 
             disabled={isLoading}
           >
             {isLoading ? (
-              <>
+              <motion.div
+                className="flex items-center justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Signing in...
-              </>
+              </motion.div>
             ) : (
-              'Sign In'
+              <motion.div
+                className="flex items-center justify-center"
+                whileTap={{ scale: 0.95 }}
+              >
+                Sign In
+              </motion.div>
             )}
           </Button>
         </form>
       </CardContent>
       
-      <CardFooter className="flex flex-col space-y-4">
+      <CardFooter className="flex flex-col space-y-4 px-0 pt-6">
         <div className="text-center">
           <Button variant="link" asChild className="text-brand-600">
             <Link to="/register">Don't have an account? Register</Link>

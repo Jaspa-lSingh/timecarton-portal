@@ -1,108 +1,112 @@
 
-# ShiftMaster - Employee Scheduling & Payroll Management System
+# ShiftWise - Smart Shift Scheduling & Management System
 
-![ShiftMaster Logo](https://example.com/logo.png)
+![ShiftWise Logo](https://i.imgur.com/REPLACE_WITH_REAL_LOGO_URL.png)
 
-## Overview
-
-ShiftMaster is a comprehensive web application designed to streamline employee scheduling and payroll management. Built with modern technologies, it provides an intuitive interface for administrators to manage schedules, track employee hours, and process payroll, while allowing employees to view their schedules, log hours, and access pay information.
+ShiftWise is a modern shift scheduling and workforce management platform designed for both employers (admins) and employees. This web application simplifies the process of scheduling, managing shifts, and handling employee availability in a seamless and user-friendly manner.
 
 ## Features
 
-### For Administrators
-- **Dashboard**: Get a quick overview of upcoming shifts, pending time-off requests, and important metrics.
-- **Employee Management**: Add, edit, and manage employee information and permissions.
-- **Schedule Creation**: Create and manage employee work schedules.
-- **Time Tracking**: Review and approve employee time cards.
-- **Payroll Processing**: Calculate and process payroll based on hours worked.
-- **Reports**: Generate reports on labor costs, scheduling efficiency, and more.
-
 ### For Employees
-- **Dashboard**: View upcoming shifts and important announcements.
-- **Schedule View**: See personal work schedule and request time off.
-- **Time Clock**: Clock in/out and view hours worked.
-- **Profile Management**: Update personal information and preferences.
-- **Pay Statements**: View pay history and current pay period details.
+- **View Weekly Schedule**: Display upcoming shifts with site-specific requirements
+- **Punch In/Out System**: Includes location tracking to validate check-ins
+- **Availability Settings**: Submit weekly availability for scheduling
+- **Pay Stub & Earnings View**: View pay stubs, total hours worked, and earnings summary
+- **Shift Details**: Display site-specific info (location, required equipment, notes, etc.)
+- **Shift Management**:
+  - Cancel shifts (24-hour advance notice required)
+  - Claim cover-up shifts from other employees
+  - Request shift swaps with coworkers
 
-## Technology Stack
+### For Admins
+- **Employee Management**: View, add, remove, and edit employee information
+- **Schedule Management**: Assign and modify shifts per employee
+- **Leave Request Handling**: Approve or deny leave requests and manage coverage
+- **Shift Swap Approval**: Review and approve/deny shift swap requests
+- **Time Tracking**: Monitor employee punch-in/out times with location verification
+- **Payroll Management**: Generate and manage employee payroll information
+- **Announcements**: Send targeted announcements to employees
 
-### Frontend
-- **React**: UI library for building the user interface
-- **Vite**: Next-generation frontend tooling
-- **TypeScript**: For type-safe code
-- **Tailwind CSS**: Utility-first CSS framework
-- **Shadcn/UI**: High-quality UI components
-- **React Router**: For client-side routing
-- **Tanstack Query**: For API data fetching and state management
-- **Recharts**: For data visualization
+## Tech Stack
 
-### Backend (Planned)
-- **Django**: Python web framework
-- **Django REST Framework**: For building RESTful APIs
-- **PostgreSQL**: Database for data storage
+- **Frontend**: React with Vite.js, Tailwind CSS
+- **UI Components**: shadcn/ui
+- **State Management**: React Query (Tanstack Query)
+- **Routing**: React Router
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js (v14 or higher)
+- Node.js (v14 or later)
 - npm or yarn
 
-### Installation and Setup
+### Installation
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/shiftmaster.git
-   cd shiftmaster
-   ```
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/shiftwise.git
+cd shiftwise
+```
 
-2. Install dependencies:
-   ```
-   npm install
-   # or
-   yarn install
-   ```
+2. Install dependencies
+```bash
+npm install
+# or
+yarn install
+```
 
-3. Start the development server:
-   ```
-   npm run dev
-   # or
-   yarn dev
-   ```
+3. Start the development server
+```bash
+npm run dev
+# or
+yarn dev
+```
 
-4. Open your browser and navigate to `http://localhost:5173`
+4. Open the application in your browser
+```
+http://localhost:5173
+```
 
-### Demo Accounts
+## Demo Credentials
 
-For testing purposes, you can use the following demo accounts:
+### Admin Account
+- **Email**: admin@example.com
+- **Password**: password
 
-- **Administrator**:
-  - Email: admin@example.com
-  - Password: password
+### Employee Account
+- **Email**: employee@example.com
+- **Password**: password
 
-- **Employee**:
-  - Email: employee@example.com
-  - Password: password
+## Project Structure
+
+- `/src/components` - Reusable UI components
+- `/src/pages` - Page components for different routes
+- `/src/services` - API service functions
+- `/src/hooks` - Custom React hooks
+- `/src/types` - TypeScript type definitions
+- `/src/components/ui` - shadcn/ui components
 
 ## Deployment
 
-This application can be deployed to any static site hosting service:
+To build the project for production:
 
-1. Build the application:
-   ```
-   npm run build
-   # or
-   yarn build
-   ```
+```bash
+npm run build
+# or
+yarn build
+```
 
-2. Deploy the contents of the `dist` directory to your hosting service.
+The build artifacts will be stored in the `dist/` directory, ready to be deployed to your hosting service.
 
 ## Future Enhancements
 
-- Mobile application for on-the-go access
-- Integration with popular accounting software
-- Advanced reporting and analytics
+- Integration with third-party calendar apps (Google Calendar, Outlook)
+- Mobile app versions (iOS, Android)
+- Advanced analytics for workforce management
 - AI-powered scheduling recommendations
-- Employee performance tracking
+- Multi-language support
 
 ## Contributing
 
@@ -111,3 +115,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- [Tailwind CSS](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [React Query](https://tanstack.com/query/latest)
+- [Lucide Icons](https://lucide.dev/)
+- [Framer Motion](https://www.framer.com/motion/)
