@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,10 +113,18 @@ const LoginForm: React.FC = () => {
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
           
-          <div className="text-sm text-center text-gray-500">
-            <p>Use these demo accounts:</p>
-            <p>Admin: admin@example.com / password</p>
-            <p>Employee: employee@example.com / password</p>
+          <div className="text-center space-y-2">
+            <div>
+              <Button variant="link" asChild>
+                <Link to="/register">Don't have an account? Register</Link>
+              </Button>
+            </div>
+            
+            <div className="text-sm text-center text-gray-500">
+              <p>Use these demo accounts:</p>
+              <p>Admin: admin@example.com / password</p>
+              <p>Employee: employee@example.com / password</p>
+            </div>
           </div>
         </form>
       </div>

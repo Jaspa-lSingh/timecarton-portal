@@ -8,6 +8,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 // Pages
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages
@@ -17,6 +18,7 @@ import AdminSchedule from "./pages/admin/Schedule";
 // Employee Pages
 import EmployeeDashboard from "./pages/employee/Dashboard";
 import EmployeeSchedule from "./pages/employee/Schedule";
+import EmployeeProfile from "./pages/employee/Profile";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,7 @@ const App = () => (
           
           {/* Auth Routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           
           {/* Admin Routes */}
           <Route 
@@ -45,7 +48,7 @@ const App = () => (
           <Route 
             path="/admin/schedule" 
             element={
-              <ProtectedRoute allowedRole="admin">
+              <ProtectedRoute allowedRole="admin" requiredPermission="manage_schedules">
                 <AdminSchedule />
               </ProtectedRoute>
             } 
@@ -53,7 +56,7 @@ const App = () => (
           <Route 
             path="/admin/employees" 
             element={
-              <ProtectedRoute allowedRole="admin">
+              <ProtectedRoute allowedRole="admin" requiredPermission="manage_employees">
                 <div>Employees Page (Coming Soon)</div>
               </ProtectedRoute>
             } 
@@ -61,7 +64,7 @@ const App = () => (
           <Route 
             path="/admin/time-tracking" 
             element={
-              <ProtectedRoute allowedRole="admin">
+              <ProtectedRoute allowedRole="admin" requiredPermission="manage_time_tracking">
                 <div>Time Tracking Page (Coming Soon)</div>
               </ProtectedRoute>
             } 
@@ -69,7 +72,7 @@ const App = () => (
           <Route 
             path="/admin/payroll" 
             element={
-              <ProtectedRoute allowedRole="admin">
+              <ProtectedRoute allowedRole="admin" requiredPermission="manage_payroll">
                 <div>Payroll Page (Coming Soon)</div>
               </ProtectedRoute>
             } 
@@ -77,7 +80,7 @@ const App = () => (
           <Route 
             path="/admin/settings" 
             element={
-              <ProtectedRoute allowedRole="admin">
+              <ProtectedRoute allowedRole="admin" requiredPermission="manage_settings">
                 <div>Settings Page (Coming Soon)</div>
               </ProtectedRoute>
             } 
@@ -95,7 +98,7 @@ const App = () => (
           <Route 
             path="/employee/schedule" 
             element={
-              <ProtectedRoute allowedRole="employee">
+              <ProtectedRoute allowedRole="employee" requiredPermission="view_own_schedule">
                 <EmployeeSchedule />
               </ProtectedRoute>
             } 
@@ -103,7 +106,7 @@ const App = () => (
           <Route 
             path="/employee/time" 
             element={
-              <ProtectedRoute allowedRole="employee">
+              <ProtectedRoute allowedRole="employee" requiredPermission="view_own_timesheet">
                 <div>Time Tracking Page (Coming Soon)</div>
               </ProtectedRoute>
             } 
@@ -111,7 +114,7 @@ const App = () => (
           <Route 
             path="/employee/pay" 
             element={
-              <ProtectedRoute allowedRole="employee">
+              <ProtectedRoute allowedRole="employee" requiredPermission="view_own_payroll">
                 <div>Pay Page (Coming Soon)</div>
               </ProtectedRoute>
             } 
@@ -119,8 +122,8 @@ const App = () => (
           <Route 
             path="/employee/profile" 
             element={
-              <ProtectedRoute allowedRole="employee">
-                <div>Profile Page (Coming Soon)</div>
+              <ProtectedRoute allowedRole="employee" requiredPermission="update_own_profile">
+                <EmployeeProfile />
               </ProtectedRoute>
             } 
           />
