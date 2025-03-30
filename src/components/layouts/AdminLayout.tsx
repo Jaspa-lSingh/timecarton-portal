@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '@/services/authService';
@@ -16,7 +17,9 @@ import {
   BarChart3, 
   HelpCircle,
   ClipboardList,
-  RefreshCw
+  RefreshCw,
+  MessageSquare,
+  Bell
 } from 'lucide-react';
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -41,9 +44,10 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/employees', label: 'Employees', icon: <Users size={20} /> },
     { path: '/admin/time-tracking', label: 'Time Tracking', icon: <Clock size={20} /> },
     { path: '/admin/payroll', label: 'Payroll', icon: <DollarSign size={20} /> },
-    { path: '/admin/inquiry-center', label: 'Employee Inquiry', icon: <HelpCircle size={20} /> },
+    { path: '/admin/inquiry-center', label: 'Employee Inquiry', icon: <MessageSquare size={20} /> },
     { path: '/admin/attendance', label: 'Attendance', icon: <ClipboardList size={20} /> },
     { path: '/admin/shift-changes', label: 'Shift Changes', icon: <RefreshCw size={20} /> },
+    { path: '/admin/announcements', label: 'Announcements', icon: <Bell size={20} /> },
     { path: '/admin/settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
   

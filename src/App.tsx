@@ -21,6 +21,7 @@ import AdminPayroll from "./pages/admin/Payroll";
 import AdminInquiryCenter from "./pages/admin/InquiryCenter";
 import AdminAttendance from "./pages/admin/Attendance";
 import AdminShiftChanges from "./pages/admin/ShiftChanges";
+import AdminAnnouncements from "./pages/admin/Announcements";
 
 // Employee Pages
 import EmployeeDashboard from "./pages/employee/Dashboard";
@@ -115,6 +116,14 @@ const App = () => (
             element={
               <ProtectedRoute allowedRole="admin">
                 <AdminShiftChanges />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/announcements" 
+            element={
+              <ProtectedRoute allowedRole="admin">
+                <AdminAnnouncements />
               </ProtectedRoute>
             } 
           />
