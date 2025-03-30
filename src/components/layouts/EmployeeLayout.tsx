@@ -1,13 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { User } from '@/types';
 import { 
   Menu, X, Calendar, Clock, DollarSign, 
-  User, LogOut, Home, HelpCircle, Repeat
+  User as UserIcon, LogOut, Home, HelpCircle, Repeat
 } from 'lucide-react';
 
 const EmployeeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -16,8 +17,13 @@ const EmployeeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const location = useLocation();
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   
-  const user = authService.getCurrentUser();
+  useEffect(() => {
+    // Get user data
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
+  }, []);
   
   const handleLogout = () => {
     authService.logout();
@@ -33,7 +39,7 @@ const EmployeeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
     { path: '/employee/schedule', label: 'My Shifts', icon: <Calendar size={20} /> },
     { path: '/employee/time', label: 'Attendance', icon: <Clock size={20} /> },
     { path: '/employee/inquiry', label: 'Inquiry', icon: <HelpCircle size={20} /> },
-    { path: '/employee/profile', label: 'Profile', icon: <User size={20} /> },
+    { path: '/employee/profile', label: 'Profile', icon: <UserIcon size={20} /> },
     { path: '/employee/pay', label: 'Payroll', icon: <DollarSign size={20} /> },
     { path: '/employee/shift-changes', label: 'Shift Changes', icon: <Repeat size={20} /> },
   ];

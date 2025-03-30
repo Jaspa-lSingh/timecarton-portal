@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/authService';
@@ -65,7 +66,7 @@ const RegisterForm: React.FC<{ adminCreated?: boolean }> = ({ adminCreated = fal
     try {
       const { confirmPassword, ...userData } = values;
       
-      const result = await authService.register(userData, values.password);
+      const result = await authService.register(userData.email, values.password, userData);
       
       if (result.error) {
         toast({

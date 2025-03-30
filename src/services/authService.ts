@@ -1,12 +1,15 @@
-
 import { User } from '@/types';
 import { supabase, isAuthenticated } from '@/lib/supabase';
 
 // Types for service responses
-interface AuthResponse {
+export interface AuthResponse {
   data?: any;
   error?: string;
+  message?: string;
 }
+
+// Cache the current user to avoid repeated calls to getUser
+let currentUserCache: User | null = null;
 
 // Authentication service methods
 export const authService = {
@@ -39,7 +42,7 @@ export const authService = {
         if (profileError) throw new Error(profileError.message);
       }
 
-      return { data: authData };
+      return { data: authData, message: 'Registration successful' };
     } catch (error) {
       console.error('Registration error:', error);
       return { error: error instanceof Error ? error.message : 'Registration failed' };
@@ -56,7 +59,38 @@ export const authService = {
 
       if (error) throw new Error(error.message);
 
-      return { data };
+      // Get user data from the users table
+      if (data.user) {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (userError) throw new Error(userError.message);
+
+        // Create user object
+        const user: User = {
+          id: data.user.id,
+          email: data.user.email || '',
+          firstName: userData.first_name || '',
+          lastName: userData.last_name || '',
+          role: userData.role || 'employee',
+          position: userData.position,
+          phoneNumber: userData.phone_number,
+          employeeId: userData.employee_id,
+          department: userData.department,
+          hourlyRate: userData.hourly_rate,
+          avatar: userData.avatar_url,
+        };
+
+        // Update cache
+        currentUserCache = user;
+
+        return { data: user };
+      }
+
+      return { data: null };
     } catch (error) {
       console.error('Login error:', error);
       return { error: error instanceof Error ? error.message : 'Login failed' };
@@ -70,6 +104,9 @@ export const authService = {
       
       if (error) throw new Error(error.message);
 
+      // Clear cache
+      currentUserCache = null;
+
       return { data: true };
     } catch (error) {
       console.error('Logout error:', error);
@@ -77,14 +114,18 @@ export const authService = {
     }
   },
 
-  // Get current user
-  async getCurrentUser(): Promise<AuthResponse> {
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      
-      if (error) throw new Error(error.message);
+  // Get current user - returns a User object, not a Promise<AuthResponse>
+  getCurrentUser(): User | null {
+    // Return from cache if available
+    if (currentUserCache) return currentUserCache;
 
-      if (data.user) {
+    // Otherwise get from session
+    const getUser = async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        
+        if (error || !data.user) return null;
+
         // Get additional user data from the users table
         const { data: userData, error: userError } = await supabase
           .from('users')
@@ -92,21 +133,67 @@ export const authService = {
           .eq('id', data.user.id)
           .single();
 
-        if (userError) throw new Error(userError.message);
+        if (userError) return null;
 
-        return { data: { ...data.user, ...userData } };
+        // Create user object
+        const user: User = {
+          id: data.user.id,
+          email: data.user.email || '',
+          firstName: userData.first_name || '',
+          lastName: userData.last_name || '',
+          role: userData.role || 'employee',
+          position: userData.position,
+          phoneNumber: userData.phone_number,
+          employeeId: userData.employee_id,
+          department: userData.department,
+          hourlyRate: userData.hourly_rate,
+          avatar: userData.avatar_url,
+        };
+
+        // Update cache
+        currentUserCache = user;
+        return user;
+      } catch (error) {
+        console.error('Get current user error:', error);
+        return null;
       }
+    };
 
-      return { data: null };
-    } catch (error) {
-      console.error('Get current user error:', error);
-      return { error: error instanceof Error ? error.message : 'Failed to get current user' };
-    }
+    // Start the async operation but return null synchronously
+    // The next call to getCurrentUser will use the cache once it's populated
+    getUser();
+    return null;
   },
 
   // Check if the user is authenticated
   isAuthenticated: async (): Promise<boolean> => {
     return await isAuthenticated();
+  },
+  
+  // Check if current user is admin
+  isAdmin(): boolean {
+    const user = authService.getCurrentUser();
+    return user?.role === 'admin';
+  },
+  
+  // Check if user has a specific permission
+  hasPermission(permission: string): boolean {
+    // Simplified permission check - in a real app this would be more sophisticated
+    const user = authService.getCurrentUser();
+    
+    // Admin has all permissions
+    if (user?.role === 'admin') return true;
+    
+    // For employees, check specific permissions
+    // This is a placeholder for a more complex permission system
+    const employeePermissions: Record<string, string[]> = {
+      'view_own_schedule': ['employee'],
+      'view_own_timesheet': ['employee'],
+      'view_own_payroll': ['employee'],
+      'update_own_profile': ['employee'],
+    };
+    
+    return user ? employeePermissions[permission]?.includes(user.role) || false : false;
   },
 
   // Function to update user profile
@@ -125,7 +212,18 @@ export const authService = {
 
       if (error) throw new Error(error.message);
 
-      return { data: true };
+      // Update cache if the current user is being updated
+      if (currentUserCache && currentUserCache.id === userId) {
+        currentUserCache = {
+          ...currentUserCache,
+          firstName: userData.firstName || currentUserCache.firstName,
+          lastName: userData.lastName || currentUserCache.lastName,
+          position: userData.position || currentUserCache.position,
+          phoneNumber: userData.phoneNumber || currentUserCache.phoneNumber,
+        };
+      }
+
+      return { data: currentUserCache, message: 'Profile updated successfully' };
     } catch (error) {
       console.error('Update profile error:', error);
       return { error: error instanceof Error ? error.message : 'Failed to update profile' };

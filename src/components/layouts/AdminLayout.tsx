@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { User } from '@/types';
 import { 
   Menu, 
   X, 
@@ -20,7 +21,7 @@ import {
   RefreshCw,
   MessageSquare,
   Bell,
-  User
+  User as UserIcon
 } from 'lucide-react';
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -29,8 +30,13 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   
-  const currentUser = authService.getCurrentUser();
+  useEffect(() => {
+    // Get user data
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
+  }, []);
   
   const handleLogout = () => {
     authService.logout();
@@ -88,11 +94,11 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="p-4 border-b">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold">
-                {currentUser?.firstName?.charAt(0)}{currentUser?.lastName?.charAt(0)}
+                {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
               </div>
               <div>
-                <p className="font-medium">{currentUser?.firstName} {currentUser?.lastName}</p>
-                <p className="text-sm text-gray-500">{currentUser?.position}</p>
+                <p className="font-medium">{user?.firstName} {user?.lastName}</p>
+                <p className="text-sm text-gray-500">{user?.position}</p>
               </div>
             </div>
           </div>
@@ -147,8 +153,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {/* User menu */}
               <div className="hidden md:flex items-center">
                 <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                  <User size={18} />
-                  <span className="font-medium text-gray-700">{currentUser?.firstName} {currentUser?.lastName}</span>
+                  <UserIcon size={18} />
+                  <span className="font-medium text-gray-700">{user?.firstName} {user?.lastName}</span>
                 </Button>
               </div>
               

@@ -17,7 +17,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   const mockClient = {
     auth: {
       getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-      signIn: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+      signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
       signUp: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
       signOut: () => Promise.resolve({ error: null }),
     },
@@ -34,6 +34,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
         eq: () => Promise.resolve({ error: new Error('Supabase not configured') }),
       }),
     }),
+    storage: {
+      from: () => ({
+        upload: () => Promise.resolve({ data: null, error: new Error('Supabase not configured') }),
+        getPublicUrl: () => ({ data: { publicUrl: '' } }),
+      }),
+    },
   };
   
   // @ts-ignore - This is a mock implementation
@@ -55,4 +61,3 @@ export const isAuthenticated = async (): Promise<boolean> => {
     return false;
   }
 };
-

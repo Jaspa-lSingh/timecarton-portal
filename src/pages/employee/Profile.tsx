@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EmployeeLayout from '@/components/layouts/EmployeeLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,19 +12,37 @@ import { User } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Profile: React.FC = () => {
-  const currentUser = authService.getCurrentUser();
-  const [user, setUser] = useState<User | null>(currentUser);
+  const [user, setUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  useEffect(() => {
+    // Get current user
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
+  }, []);
+  
   // Form state
   const [formData, setFormData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
-    email: user?.email || '',
-    phoneNumber: user?.phoneNumber || '',
-    position: user?.position || '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    position: '',
   });
+  
+  // Update form data when user is loaded
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phoneNumber: user.phoneNumber || '',
+        position: user.position || '',
+      });
+    }
+  }, [user]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,8 +70,18 @@ const Profile: React.FC = () => {
           description: result.error,
           variant: 'destructive'
         });
-      } else if (result.data) {
-        setUser(result.data);
+      } else {
+        // Update local user state with the changes
+        setUser(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phoneNumber: formData.phoneNumber
+          };
+        });
+        
         toast({
           title: 'Profile Updated',
           description: 'Your profile has been updated successfully.'
@@ -72,14 +100,16 @@ const Profile: React.FC = () => {
   };
   
   const handleCancel = () => {
-    // Reset form data
-    setFormData({
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      email: user?.email || '',
-      phoneNumber: user?.phoneNumber || '',
-      position: user?.position || '',
-    });
+    // Reset form data to current user data
+    if (user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phoneNumber: user.phoneNumber || '',
+        position: user.position || '',
+      });
+    }
     setIsEditing(false);
   };
   

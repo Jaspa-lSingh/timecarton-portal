@@ -11,16 +11,23 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // If already logged in, redirect to appropriate dashboard
-    const user = authService.getCurrentUser();
-    if (user) {
-      if (user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/employee/dashboard');
+    const checkAuth = async () => {
+      // If already logged in, redirect to appropriate dashboard
+      const isAuthenticated = await authService.isAuthenticated();
+      
+      if (isAuthenticated) {
+        const user = authService.getCurrentUser();
+        if (user && user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (user) {
+          navigate('/employee/dashboard');
+        }
       }
-    }
-    setLoading(false);
+      
+      setLoading(false);
+    };
+    
+    checkAuth();
   }, [navigate]);
   
   if (loading) {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '@/services/authService';
@@ -62,7 +61,7 @@ const LoginForm: React.FC = () => {
       // Log the login attempt for debugging
       console.log(`Attempting to login with ${email} as ${role}`);
       
-      const result = await authService.login(email, password, role);
+      const result = await authService.login(email, password);
       
       if (result.error) {
         toast({

@@ -1,32 +1,39 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/authService';
 import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Check if user is already logged in
-    const currentUser = authService.getCurrentUser();
-    
-    // Add a slight delay for a better UX
-    const timer = setTimeout(() => {
-      if (currentUser) {
-        // Redirect based on role
-        if (currentUser.role === 'admin') {
-          navigate('/admin/dashboard');
+    const checkAuthAndRedirect = async () => {
+      // Check if user is already logged in
+      const isAuthenticated = await authService.isAuthenticated();
+      
+      // Add a slight delay for a better UX
+      setTimeout(() => {
+        setIsLoading(false);
+        
+        if (isAuthenticated) {
+          const currentUser = authService.getCurrentUser();
+          
+          // Redirect based on role
+          if (currentUser && currentUser.role === 'admin') {
+            navigate('/admin/dashboard');
+          } else {
+            navigate('/employee/dashboard');
+          }
         } else {
-          navigate('/employee/dashboard');
+          // Redirect to login if not logged in
+          navigate('/login');
         }
-      } else {
-        // Redirect to login if not logged in
-        navigate('/login');
-      }
-    }, 1500);
+      }, 1500);
+    };
     
-    return () => clearTimeout(timer);
+    checkAuthAndRedirect();
   }, [navigate]);
   
   return (
