@@ -404,14 +404,14 @@ const TimeTrackingAdmin: React.FC = () => {
                   Employee
                 </label>
                 <Select
-                  value={selectedEmployee || ""}
-                  onValueChange={(value) => setSelectedEmployee(value || null)}
+                  value={selectedEmployee || "all"}
+                  onValueChange={(value) => setSelectedEmployee(value === "all" ? null : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All Employees" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Employees</SelectItem>
+                    <SelectItem value="all">All Employees</SelectItem>
                     {employees.map(employee => (
                       <SelectItem key={employee.id} value={employee.id}>
                         {employee.firstName} {employee.lastName}
