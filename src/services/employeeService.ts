@@ -1,7 +1,6 @@
-
 import { User, ApiResponse } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { authService } from './authService';
+import { authService } from '@/services';
 
 // Map database user to our app User type
 const mapToUser = (dbUser: any): User => {

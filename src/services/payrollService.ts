@@ -1,6 +1,5 @@
-
 import { PayPeriod, PayrollRecord, ApiResponse } from '@/types';
-import { authService } from './authService';
+import { authService } from '@/services';
 
 // Mock pay periods
 const mockPayPeriods: PayPeriod[] = [

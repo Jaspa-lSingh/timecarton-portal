@@ -1,6 +1,5 @@
-
 import { TimeEntry, ApiResponse } from '@/types';
-import { authService } from './authService';
+import { authService } from '@/services';
 
 // Base API URL - replace with your actual API URL
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.shiftmaster.com/api';

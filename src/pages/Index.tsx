@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '@/services/authService';
+import { authService } from '@/services';
 import { Loader2 } from 'lucide-react';
 
 const Index = () => {

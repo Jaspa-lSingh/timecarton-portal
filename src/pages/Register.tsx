@@ -1,8 +1,7 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RegisterForm from '@/components/RegisterForm';
-import { authService } from '@/services/authService';
+import { authService } from '@/services';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();

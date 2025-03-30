@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '@/services/authService';
+import { authService } from '@/services';
 import LoginForm from '@/components/LoginForm';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle, Clock, Users, DollarSign, Calendar } from 'lucide-react';
