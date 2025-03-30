@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import EmployeeLayout from '@/components/layouts/EmployeeLayout';
 import { shiftService } from '@/services/shiftService';
 import { payrollService } from '@/services/payrollService';
 import { authService } from '@/services/authService';
 import { Shift, PayrollRecord } from '@/types';
-import { Calendar, Clock, DollarSign, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, DollarSign, AlertCircle, HelpCircle, Repeat } from 'lucide-react';
 
 const EmployeeDashboard: React.FC = () => {
   const [upcomingShifts, setUpcomingShifts] = useState<Shift[]>([]);
@@ -93,7 +94,7 @@ const EmployeeDashboard: React.FC = () => {
         </div>
         
         {/* Quick actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
           <Card className="bg-brand-50 border-brand-100">
             <CardContent className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -110,7 +111,9 @@ const EmployeeDashboard: React.FC = () => {
                 <h3 className="font-semibold text-gray-700">View Schedule</h3>
                 <Calendar className="h-5 w-5 text-gray-500" />
               </div>
-              <Button variant="outline" className="w-full">See All Shifts</Button>
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/employee/schedule">See All Shifts</Link>
+              </Button>
             </CardContent>
           </Card>
           
@@ -120,7 +123,9 @@ const EmployeeDashboard: React.FC = () => {
                 <h3 className="font-semibold text-gray-700">Payroll</h3>
                 <DollarSign className="h-5 w-5 text-gray-500" />
               </div>
-              <Button variant="outline" className="w-full">View Pay Stubs</Button>
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/employee/pay">View Pay Stubs</Link>
+              </Button>
             </CardContent>
           </Card>
           
@@ -130,7 +135,33 @@ const EmployeeDashboard: React.FC = () => {
                 <h3 className="font-semibold text-gray-700">Time Off</h3>
                 <Calendar className="h-5 w-5 text-gray-500" />
               </div>
-              <Button variant="outline" className="w-full">Request Time Off</Button>
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/employee/inquiry">Request Time Off</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-gray-700">Shift Changes</h3>
+                <Repeat className="h-5 w-5 text-gray-500" />
+              </div>
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/employee/shift-changes">Manage Shifts</Link>
+              </Button>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-gray-700">Inquiries</h3>
+                <HelpCircle className="h-5 w-5 text-gray-500" />
+              </div>
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/employee/inquiry">Submit Inquiry</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>

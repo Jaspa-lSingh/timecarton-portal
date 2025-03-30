@@ -25,6 +25,8 @@ import EmployeeSchedule from "./pages/employee/Schedule";
 import EmployeeTimeTracking from "./pages/employee/TimeTracking";
 import EmployeePayroll from "./pages/employee/Payroll";
 import EmployeeProfile from "./pages/employee/Profile";
+import ShiftChanges from "./pages/employee/ShiftChanges";
+import InquiryCenter from "./pages/employee/Inquiry";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -136,6 +138,22 @@ const App = () => (
             element={
               <ProtectedRoute allowedRole="employee" requiredPermission="update_own_profile">
                 <EmployeeProfile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/employee/shift-changes" 
+            element={
+              <ProtectedRoute allowedRole="employee">
+                <ShiftChanges />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/employee/inquiry" 
+            element={
+              <ProtectedRoute allowedRole="employee">
+                <InquiryCenter />
               </ProtectedRoute>
             } 
           />

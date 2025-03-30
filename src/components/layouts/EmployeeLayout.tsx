@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Menu, X, Calendar, Clock, DollarSign, 
-  User, LogOut, Home 
+  User, LogOut, Home, HelpCircle, Repeat
 } from 'lucide-react';
 
 const EmployeeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -30,10 +30,12 @@ const EmployeeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
   
   const navItems = [
     { path: '/employee/dashboard', label: 'Dashboard', icon: <Home size={20} /> },
-    { path: '/employee/schedule', label: 'My Schedule', icon: <Calendar size={20} /> },
-    { path: '/employee/time', label: 'Time Tracking', icon: <Clock size={20} /> },
-    { path: '/employee/pay', label: 'My Pay', icon: <DollarSign size={20} /> },
+    { path: '/employee/schedule', label: 'My Shifts', icon: <Calendar size={20} /> },
+    { path: '/employee/time', label: 'Attendance', icon: <Clock size={20} /> },
+    { path: '/employee/inquiry', label: 'Inquiry', icon: <HelpCircle size={20} /> },
     { path: '/employee/profile', label: 'Profile', icon: <User size={20} /> },
+    { path: '/employee/pay', label: 'Payroll', icon: <DollarSign size={20} /> },
+    { path: '/employee/shift-changes', label: 'Shift Changes', icon: <Repeat size={20} /> },
   ];
   
   const isActive = (path: string) => {
@@ -125,6 +127,10 @@ const EmployeeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
               </Button>
             )}
             
+            <div className="flex-1 text-center font-medium text-lg hidden md:block">
+              Dashboard Overview
+            </div>
+            
             <div className="flex items-center ml-auto">
               <div className="hidden md:flex items-center mr-4 text-sm">
                 <span className="font-medium text-gray-700">{user?.firstName} {user?.lastName}</span>
@@ -136,7 +142,7 @@ const EmployeeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
                 className="gap-2"
               >
                 <LogOut size={16} />
-                <span className="hidden md:inline">Log Out</span>
+                <span className="hidden md:inline">Logout</span>
               </Button>
             </div>
           </div>
