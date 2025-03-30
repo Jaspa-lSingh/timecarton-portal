@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { User } from '@/types';
 import { Link } from 'react-router-dom';
@@ -50,15 +49,14 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
           <AlertCircle className="h-10 w-10" />
           <h3 className="font-semibold text-lg">Error Loading Employees</h3>
           <p className="text-gray-600 max-w-md">{error}</p>
-          {error.includes("Supabase not configured") && (
-            <div className="bg-amber-50 border border-amber-200 p-4 rounded-md mt-4 max-w-md">
-              <h4 className="font-medium text-amber-700">Configuration Required</h4>
-              <p className="text-sm text-amber-600 mt-1">
-                Supabase credentials are not configured. Please set up your Supabase environment 
-                variables to enable database functionality.
-              </p>
-            </div>
-          )}
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-md mt-4 max-w-md">
+            <h4 className="font-medium text-amber-700">Setup Steps</h4>
+            <ol className="text-sm text-amber-600 mt-1 list-decimal pl-5 space-y-1">
+              <li>Go to your Supabase project dashboard</li>
+              <li>Create the required database tables (users table)</li>
+              <li>Set up RLS policies for accessing data</li>
+            </ol>
+          </div>
         </div>
       </div>
     );
