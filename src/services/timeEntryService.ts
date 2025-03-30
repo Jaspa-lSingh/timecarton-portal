@@ -3,7 +3,7 @@ import { TimeEntry, ApiResponse } from '@/types';
 import { authService } from './authService';
 
 // Base API URL - replace with your actual API URL
-const API_URL = process.env.REACT_APP_API_URL || 'https://api.shiftmaster.com/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.shiftmaster.com/api';
 
 // Time entry service with real API endpoints
 export const timeEntryService = {
