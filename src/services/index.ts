@@ -1,5 +1,5 @@
 
-export { authService } from './auth';
+export { authService } from './authService';
 export * from './employeeService';
 export * from './payrollService';
 export * from './shiftService';

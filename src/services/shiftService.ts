@@ -1,34 +1,27 @@
 
 import { Shift, ApiResponse, ShiftChangeRequest, ShiftCoverRequest } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 import { authService } from './authService';
-
-// Base API URL - use the same as other services
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.shiftmaster.com/api';
 
 // Shift service
 export const shiftService = {
   // Get all shifts
   getAllShifts: async (): Promise<ApiResponse<Shift[]>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { data, error } = await supabase
+        .from('shifts')
+        .select('*');
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to fetch shifts' };
+      if (error) {
+        console.error('Error fetching shifts:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.shifts };
+      return { data: transformShifts(data) };
     } catch (error) {
       console.error('Error fetching shifts:', error);
       return { error: 'Network error when fetching shifts' };
@@ -37,26 +30,22 @@ export const shiftService = {
   
   // Get shifts for a specific employee
   getEmployeeShifts: async (employeeId: string): Promise<ApiResponse<Shift[]>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/employee/${employeeId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { data, error } = await supabase
+        .from('shifts')
+        .select('*')
+        .eq('employee_id', employeeId);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to fetch employee shifts' };
+      if (error) {
+        console.error('Error fetching employee shifts:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.shifts };
+      return { data: transformShifts(data) };
     } catch (error) {
       console.error('Error fetching employee shifts:', error);
       return { error: 'Network error when fetching shifts' };
@@ -65,32 +54,28 @@ export const shiftService = {
   
   // Get shifts for a specific date or date range
   getShiftsByDate: async (startDate: string, endDate?: string): Promise<ApiResponse<Shift[]>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
     
     try {
-      const token = authService.getToken();
-      let url = `${API_URL}/shifts/date/${startDate}`;
+      let query = supabase
+        .from('shifts')
+        .select('*')
+        .gte('start_time', startDate);
       
       if (endDate) {
-        url += `?endDate=${endDate}`;
+        query = query.lte('start_time', endDate);
       }
       
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { data, error } = await query;
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to fetch shifts' };
+      if (error) {
+        console.error('Error fetching shifts by date:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.shifts };
+      return { data: transformShifts(data) };
     } catch (error) {
       console.error('Error fetching shifts by date:', error);
       return { error: 'Network error when fetching shifts' };
@@ -104,23 +89,34 @@ export const shiftService = {
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(shiftData)
-      });
+      // Transform from frontend model to database model
+      const dbShift = {
+        employee_id: shiftData.employeeId,
+        start_time: shiftData.startTime,
+        end_time: shiftData.endTime,
+        position: shiftData.position,
+        department: shiftData.department,
+        notes: shiftData.notes,
+        status: shiftData.status,
+        location: shiftData.location,
+        requirements: shiftData.requirements
+      };
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to create shift' };
+      const { data, error } = await supabase
+        .from('shifts')
+        .insert([dbShift])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating shift:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.shift, message: 'Shift created successfully' };
+      return { 
+        data: transformShift(data), 
+        message: 'Shift created successfully' 
+      };
     } catch (error) {
       console.error('Error creating shift:', error);
       return { error: 'Network error when creating shift' };
@@ -134,23 +130,35 @@ export const shiftService = {
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(shiftData)
-      });
+      // Transform from frontend model to database model
+      const dbShift = {
+        employee_id: shiftData.employeeId,
+        start_time: shiftData.startTime,
+        end_time: shiftData.endTime,
+        position: shiftData.position,
+        department: shiftData.department,
+        notes: shiftData.notes,
+        status: shiftData.status,
+        location: shiftData.location,
+        requirements: shiftData.requirements
+      };
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to update shift' };
+      const { data, error } = await supabase
+        .from('shifts')
+        .update(dbShift)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating shift:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.shift, message: 'Shift updated successfully' };
+      return { 
+        data: transformShift(data), 
+        message: 'Shift updated successfully' 
+      };
     } catch (error) {
       console.error('Error updating shift:', error);
       return { error: 'Network error when updating shift' };
@@ -164,17 +172,14 @@ export const shiftService = {
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const { error } = await supabase
+        .from('shifts')
+        .delete()
+        .eq('id', id);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to delete shift' };
+      if (error) {
+        console.error('Error deleting shift:', error);
+        return { error: error.message };
       }
       
       return { message: 'Shift deleted successfully' };
@@ -186,151 +191,92 @@ export const shiftService = {
 
   // Get all shift swap requests
   getShiftSwapRequests: async (): Promise<ApiResponse<ShiftChangeRequest[]>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
 
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/swap-requests`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { data, error } = await supabase
+        .from('shift_change_requests')
+        .select('*');
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to fetch shift swap requests' };
+      if (error) {
+        console.error('Error fetching shift swap requests:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.requests };
+      return { data: transformShiftChangeRequests(data) };
     } catch (error) {
       console.error('Error fetching shift swap requests:', error);
       return { error: 'Network error when fetching shift swap requests' };
     }
   },
 
-  // Get all shift cover requests
-  getShiftCoverRequests: async (): Promise<ApiResponse<ShiftCoverRequest[]>> => {
-    if (!authService.isAuthenticated()) {
-      return { error: 'Not authenticated' };
-    }
-
-    try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/cover-requests`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to fetch shift cover requests' };
-      }
-      
-      const data = await response.json();
-      return { data: data.requests };
-    } catch (error) {
-      console.error('Error fetching shift cover requests:', error);
-      return { error: 'Network error when fetching shift cover requests' };
-    }
-  },
-
   // Create a shift swap request
   createShiftSwapRequest: async (requestData: Partial<ShiftChangeRequest>): Promise<ApiResponse<ShiftChangeRequest>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
 
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/swap-requests`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
-      });
+      // Transform from frontend model to database model
+      const dbRequest = {
+        employee_id: requestData.employeeId,
+        my_shift_id: requestData.myShiftId,
+        target_shift_id: requestData.targetShiftId,
+        my_shift_date: requestData.myShiftDate,
+        target_shift_date: requestData.targetShiftDate,
+        reason: requestData.reason,
+        status: requestData.status || 'pending',
+        request_date: requestData.requestDate || new Date().toISOString().split('T')[0],
+        admin_notes: requestData.adminNotes
+      };
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to create shift swap request' };
+      const { data, error } = await supabase
+        .from('shift_change_requests')
+        .insert([dbRequest])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating shift swap request:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.request, message: 'Shift swap request created successfully' };
+      return { 
+        data: transformShiftChangeRequest(data), 
+        message: 'Shift swap request created successfully' 
+      };
     } catch (error) {
       console.error('Error creating shift swap request:', error);
       return { error: 'Network error when creating shift swap request' };
     }
   },
 
-  // Create a shift cover request
-  createShiftCoverRequest: async (requestData: Partial<ShiftCoverRequest>): Promise<ApiResponse<ShiftCoverRequest>> => {
-    if (!authService.isAuthenticated()) {
-      return { error: 'Not authenticated' };
-    }
-
-    try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/cover-requests`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to create shift cover request' };
-      }
-      
-      const data = await response.json();
-      return { data: data.request, message: 'Shift cover request created successfully' };
-    } catch (error) {
-      console.error('Error creating shift cover request:', error);
-      return { error: 'Network error when creating shift cover request' };
-    }
-  },
-
   // Update a shift request status (admin only)
   updateShiftRequestStatus: async (
     requestId: string, 
-    status: 'approved' | 'rejected', 
-    type: 'swap' | 'cover'
+    status: 'approved' | 'rejected'
   ): Promise<ApiResponse<any>> => {
     if (!authService.isAdmin()) {
       return { error: 'Not authorized' };
     }
 
     try {
-      const token = authService.getToken();
-      const endpoint = type === 'swap' ? 'swap-requests' : 'cover-requests';
+      const { data, error } = await supabase
+        .from('shift_change_requests')
+        .update({ status })
+        .eq('id', requestId)
+        .select()
+        .single();
       
-      const response = await fetch(`${API_URL}/shifts/${endpoint}/${requestId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to update shift request' };
+      if (error) {
+        console.error('Error updating shift request:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
       return { 
-        data: data.request, 
+        data: transformShiftChangeRequest(data), 
         message: `Request ${status}`
       };
     } catch (error) {
@@ -341,27 +287,27 @@ export const shiftService = {
   
   // Approve a shift (employee only)
   approveShift: async (shiftId: string): Promise<ApiResponse<Shift>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/${shiftId}/approve`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { data, error } = await supabase
+        .from('shifts')
+        .update({ status: 'approved' })
+        .eq('id', shiftId)
+        .select()
+        .single();
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to approve shift' };
+      if (error) {
+        console.error('Error approving shift:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.shift, message: 'Shift approved successfully' };
+      return { 
+        data: transformShift(data), 
+        message: 'Shift approved successfully' 
+      };
     } catch (error) {
       console.error('Error approving shift:', error);
       return { error: 'Network error when approving shift' };
@@ -375,22 +321,22 @@ export const shiftService = {
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/${shiftId}/cancel`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { data, error } = await supabase
+        .from('shifts')
+        .update({ status: 'cancelled' })
+        .eq('id', shiftId)
+        .select()
+        .single();
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to cancel shift' };
+      if (error) {
+        console.error('Error cancelling shift:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.shift, message: 'Shift cancelled successfully' };
+      return { 
+        data: transformShift(data), 
+        message: 'Shift cancelled successfully' 
+      };
     } catch (error) {
       console.error('Error cancelling shift:', error);
       return { error: 'Network error when cancelling shift' };
@@ -407,93 +353,103 @@ export const shiftService = {
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/bulk-assign`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          shiftData,
-          employeeIds
-        })
-      });
+      // Create shift objects for each employee
+      const shifts = employeeIds.map(employeeId => ({
+        employee_id: employeeId,
+        start_time: shiftData.startTime,
+        end_time: shiftData.endTime,
+        position: shiftData.position,
+        department: shiftData.department,
+        notes: shiftData.notes,
+        status: shiftData.status || 'scheduled',
+        location: shiftData.location,
+        requirements: shiftData.requirements
+      }));
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to assign shifts' };
+      const { data, error } = await supabase
+        .from('shifts')
+        .insert(shifts)
+        .select();
+      
+      if (error) {
+        console.error('Error assigning shifts:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.shifts, message: 'Shifts assigned successfully' };
+      return { 
+        data: transformShifts(data), 
+        message: 'Shifts assigned successfully' 
+      };
     } catch (error) {
       console.error('Error assigning shifts:', error);
       return { error: 'Network error when assigning shifts' };
     }
   },
   
-  // Assign shift to all employees in a department
-  assignShiftToDepartment: async (
-    shiftData: Partial<Shift>, 
-    department: string
-  ): Promise<ApiResponse<Shift[]>> => {
-    if (!authService.isAdmin()) {
-      return { error: 'Not authorized' };
-    }
-    
-    try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/department-assign`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          shiftData,
-          department
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to assign department shifts' };
-      }
-      
-      const data = await response.json();
-      return { data: data.shifts, message: `Shifts assigned to ${department} department` };
-    } catch (error) {
-      console.error('Error assigning department shifts:', error);
-      return { error: 'Network error when assigning shifts' };
-    }
-  },
-  
   // Get shifts for a specific department
   getShiftsByDepartment: async (department: string): Promise<ApiResponse<Shift[]>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/shifts/department/${department}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const { data, error } = await supabase
+        .from('shifts')
+        .select('*')
+        .eq('department', department);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to fetch department shifts' };
+      if (error) {
+        console.error('Error fetching department shifts:', error);
+        return { error: error.message };
       }
       
-      const data = await response.json();
-      return { data: data.shifts };
+      return { data: transformShifts(data) };
     } catch (error) {
       console.error('Error fetching department shifts:', error);
       return { error: 'Network error when fetching shifts' };
     }
   }
 };
+
+// Helper functions to transform database models to frontend models
+function transformShift(shift: any): Shift {
+  return {
+    id: shift.id,
+    employeeId: shift.employee_id,
+    startTime: shift.start_time,
+    endTime: shift.end_time,
+    position: shift.position,
+    department: shift.department,
+    notes: shift.notes,
+    status: shift.status,
+    location: shift.location,
+    requirements: shift.requirements
+  };
+}
+
+function transformShifts(shifts: any[]): Shift[] {
+  return shifts.map(transformShift);
+}
+
+function transformShiftChangeRequest(request: any): ShiftChangeRequest {
+  return {
+    id: request.id,
+    employeeId: request.employee_id,
+    myShiftId: request.my_shift_id,
+    targetShiftId: request.target_shift_id,
+    myShiftDate: request.my_shift_date,
+    targetShiftDate: request.target_shift_date,
+    reason: request.reason,
+    status: request.status,
+    requestDate: request.request_date,
+    updatedAt: request.updated_at,
+    adminNotes: request.admin_notes
+  };
+}
+
+function transformShiftChangeRequests(requests: any[]): ShiftChangeRequest[] {
+  return requests.map(transformShiftChangeRequest);
+}
+
+// ShiftCoverRequest methods are removed as they're not used in the current schema
+// If you need them, you can implement them similarly to the ShiftChangeRequest methods
