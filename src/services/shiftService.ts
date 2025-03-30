@@ -1,5 +1,5 @@
 
-import { Shift, ApiResponse } from '@/types';
+import { Shift, ApiResponse, ShiftChangeRequest, ShiftCoverRequest } from '@/types';
 import { authService } from './authService';
 
 // Mock shifts data
@@ -75,6 +75,58 @@ const mockShifts: Shift[] = [
     position: 'Cook',
     status: 'pending',
     location: 'Main Store'
+  }
+];
+
+// Mock shift swap requests
+const mockShiftSwapRequests: ShiftChangeRequest[] = [
+  {
+    id: '1',
+    employeeId: '2',
+    myShiftId: '5',
+    targetShiftId: '7',
+    myShiftDate: '2024-06-15T09:00:00',
+    targetShiftDate: '2024-06-16T09:00:00',
+    reason: 'Family event',
+    status: 'pending',
+    requestDate: '2024-06-10T14:30:00',
+    updatedAt: '2024-06-10T14:30:00'
+  },
+  {
+    id: '2',
+    employeeId: '3',
+    myShiftId: '6',
+    targetShiftId: '8',
+    myShiftDate: '2024-07-02T10:00:00',
+    targetShiftDate: '2024-07-03T10:00:00',
+    reason: 'Medical appointment',
+    status: 'approved',
+    requestDate: '2024-06-08T11:20:00',
+    updatedAt: '2024-06-09T09:15:00'
+  }
+];
+
+// Mock shift cover requests
+const mockShiftCoverRequests: ShiftCoverRequest[] = [
+  {
+    id: '1',
+    employeeId: '2',
+    shiftId: '5',
+    shiftDate: '2024-06-20T14:00:00',
+    reason: 'Personal emergency',
+    status: 'pending',
+    requestDate: '2024-06-15T10:30:00',
+    updatedAt: '2024-06-15T10:30:00'
+  },
+  {
+    id: '2',
+    employeeId: '3',
+    shiftId: '6',
+    shiftDate: '2024-06-22T08:00:00',
+    reason: 'Doctor appointment',
+    status: 'pending',
+    requestDate: '2024-06-16T09:45:00',
+    updatedAt: '2024-06-16T09:45:00'
   }
 ];
 
@@ -259,6 +311,158 @@ export const shiftService = {
     } catch (error) {
       console.error('Error deleting shift:', error);
       return { error: 'Failed to delete shift' };
+    }
+  },
+
+  // Get all shift swap requests
+  getShiftSwapRequests: async (): Promise<ApiResponse<ShiftChangeRequest[]>> => {
+    if (!authService.isAuthenticated()) {
+      return { error: 'Not authenticated' };
+    }
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const user = authService.getCurrentUser();
+
+      if (user?.role === 'admin') {
+        // Admins can see all swap requests
+        return { data: mockShiftSwapRequests };
+      } else {
+        // Employees can see only their swap requests
+        const employeeRequests = mockShiftSwapRequests.filter(req => req.employeeId === user?.id);
+        return { data: employeeRequests };
+      }
+    } catch (error) {
+      console.error('Error fetching shift swap requests:', error);
+      return { error: 'Failed to fetch shift swap requests' };
+    }
+  },
+
+  // Get all shift cover requests
+  getShiftCoverRequests: async (): Promise<ApiResponse<ShiftCoverRequest[]>> => {
+    if (!authService.isAuthenticated()) {
+      return { error: 'Not authenticated' };
+    }
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const user = authService.getCurrentUser();
+
+      if (user?.role === 'admin') {
+        // Admins can see all cover requests
+        return { data: mockShiftCoverRequests };
+      } else {
+        // Employees can see only their cover requests
+        const employeeRequests = mockShiftCoverRequests.filter(req => req.employeeId === user?.id);
+        return { data: employeeRequests };
+      }
+    } catch (error) {
+      console.error('Error fetching shift cover requests:', error);
+      return { error: 'Failed to fetch shift cover requests' };
+    }
+  },
+
+  // Create a shift swap request
+  createShiftSwapRequest: async (requestData: Partial<ShiftChangeRequest>): Promise<ApiResponse<ShiftChangeRequest>> => {
+    if (!authService.isAuthenticated()) {
+      return { error: 'Not authenticated' };
+    }
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const user = authService.getCurrentUser();
+
+      // Mock response
+      const newRequest: ShiftChangeRequest = {
+        id: Date.now().toString(),
+        employeeId: user?.id || '',
+        myShiftId: requestData.myShiftId || '',
+        targetShiftId: requestData.targetShiftId || '',
+        myShiftDate: requestData.myShiftDate || '',
+        targetShiftDate: requestData.targetShiftDate || '',
+        reason: requestData.reason || '',
+        status: 'pending',
+        requestDate: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      return { data: newRequest, message: 'Shift swap request created successfully' };
+    } catch (error) {
+      console.error('Error creating shift swap request:', error);
+      return { error: 'Failed to create shift swap request' };
+    }
+  },
+
+  // Create a shift cover request
+  createShiftCoverRequest: async (requestData: Partial<ShiftCoverRequest>): Promise<ApiResponse<ShiftCoverRequest>> => {
+    if (!authService.isAuthenticated()) {
+      return { error: 'Not authenticated' };
+    }
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const user = authService.getCurrentUser();
+
+      // Mock response
+      const newRequest: ShiftCoverRequest = {
+        id: Date.now().toString(),
+        employeeId: user?.id || '',
+        shiftId: requestData.shiftId || '',
+        shiftDate: requestData.shiftDate || '',
+        reason: requestData.reason || '',
+        status: 'pending',
+        requestDate: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      return { data: newRequest, message: 'Shift cover request created successfully' };
+    } catch (error) {
+      console.error('Error creating shift cover request:', error);
+      return { error: 'Failed to create shift cover request' };
+    }
+  },
+
+  // Update a shift request status (admin only)
+  updateShiftRequestStatus: async (
+    requestId: string, 
+    status: 'approved' | 'rejected', 
+    type: 'swap' | 'cover'
+  ): Promise<ApiResponse<any>> => {
+    if (!authService.isAdmin()) {
+      return { error: 'Not authorized' };
+    }
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      // Find the request to update
+      const requestsArray = type === 'swap' ? mockShiftSwapRequests : mockShiftCoverRequests;
+      const existingRequest = requestsArray.find(req => req.id === requestId);
+
+      if (!existingRequest) {
+        return { error: 'Request not found' };
+      }
+
+      // Update request
+      existingRequest.status = status;
+      existingRequest.updatedAt = new Date().toISOString();
+
+      return { 
+        data: existingRequest, 
+        message: `Request ${status}`
+      };
+    } catch (error) {
+      console.error('Error updating shift request:', error);
+      return { error: 'Failed to update shift request' };
     }
   }
 };

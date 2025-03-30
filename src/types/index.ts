@@ -28,6 +28,67 @@ export interface Shift {
   location?: string;
 }
 
+// Shift Change/Request types
+export type RequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface ShiftChangeRequest {
+  id: string;
+  employeeId: string;
+  myShiftId: string;
+  targetShiftId: string;
+  myShiftDate: string;
+  targetShiftDate: string;
+  reason: string;
+  status: RequestStatus;
+  requestDate: string;
+  updatedAt: string;
+  adminNotes?: string;
+}
+
+export interface ShiftCoverRequest {
+  id: string;
+  employeeId: string;
+  shiftId: string;
+  shiftDate: string;
+  reason: string;
+  status: RequestStatus;
+  requestDate: string;
+  updatedAt: string;
+  adminNotes?: string;
+}
+
+// Inquiry and Leave Request types
+export interface Inquiry {
+  id: string;
+  employeeId: string;
+  subject: string;
+  message: string;
+  status: RequestStatus | 'replied';
+  adminReply?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LeaveRequest {
+  id: string;
+  employeeId: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  status: RequestStatus;
+  adminReply?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  date: string;
+  createdBy: string;
+}
+
 // Timesheet types
 export interface TimeEntry {
   id: string;
