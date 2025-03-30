@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminSchedule from "./pages/admin/Schedule";
 import AdminEmployees from "./pages/admin/Employees";
+import AdminEmployeeDetail from "./pages/admin/EmployeeDetail";
 import AdminTimeTracking from "./pages/admin/TimeTracking";
 import AdminPayroll from "./pages/admin/Payroll";
 import AdminInquiryCenter from "./pages/admin/InquiryCenter";
@@ -76,6 +76,14 @@ const App = () => (
             element={
               <ProtectedRoute allowedRole="admin" requiredPermission="manage_employees">
                 <AdminEmployees />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/employees/:id" 
+            element={
+              <ProtectedRoute allowedRole="admin" requiredPermission="manage_employees">
+                <AdminEmployeeDetail />
               </ProtectedRoute>
             } 
           />

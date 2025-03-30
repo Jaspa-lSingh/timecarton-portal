@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { User } from '@/types';
+import { Link } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -64,30 +65,32 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
           {employees.map((employee) => (
             <TableRow key={employee.id}>
               <TableCell className="font-medium">
-                <div className="flex items-center gap-3">
-                  <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-100">
-                    {employee.avatar ? (
-                      <img
-                        src={employee.avatar}
-                        alt={`${employee.firstName} ${employee.lastName}`}
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full w-full bg-brand-100 text-brand-700 font-semibold">
-                        {employee.firstName[0]}
-                        {employee.lastName[0]}
+                <Link to={`/admin/employees/${employee.id}`} className="hover:underline">
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-10 w-10 rounded-full overflow-hidden bg-gray-100">
+                      {employee.avatar ? (
+                        <img
+                          src={employee.avatar}
+                          alt={`${employee.firstName} ${employee.lastName}`}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full w-full bg-brand-100 text-brand-700 font-semibold">
+                          {employee.firstName[0]}
+                          {employee.lastName[0]}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium">
+                        {employee.firstName} {employee.lastName}
                       </div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="font-medium">
-                      {employee.firstName} {employee.lastName}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {employee.email}
+                      <div className="text-xs text-gray-500">
+                        {employee.email}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               </TableCell>
               <TableCell>{employee.employeeId || 'N/A'}</TableCell>
               <TableCell>{employee.position || 'N/A'}</TableCell>
