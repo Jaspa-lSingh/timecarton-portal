@@ -8,14 +8,23 @@ export interface User {
   firstName: string;
   lastName: string;
   role: UserRole;
+  employeeId?: string; // Added employee ID field
   position?: string;
+  department?: string; // Added department field
   hourlyRate?: number;
   phoneNumber?: string;
   avatar?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zipCode?: string;
+  };
 }
 
 // Shift types
-export type ShiftStatus = 'scheduled' | 'completed' | 'missed' | 'pending';
+export type ShiftStatus = 'scheduled' | 'completed' | 'missed' | 'pending' | 'approved' | 'cancelled';
 
 export interface Shift {
   id: string;
@@ -23,9 +32,11 @@ export interface Shift {
   startTime: string;
   endTime: string;
   position?: string;
+  department?: string; // Added department field
   notes?: string;
   status: ShiftStatus;
   location?: string;
+  requirements?: string; // Added requirements field
 }
 
 // Shift Change/Request types
@@ -99,6 +110,18 @@ export interface TimeEntry {
   totalHours?: number;
   approved: boolean;
   notes?: string;
+  punchInPhoto?: string; // Photo taken at punch-in
+  punchOutPhoto?: string; // Photo taken at punch-out
+  punchInLocation?: { // Location at punch-in
+    lat: number;
+    lng: number;
+    address?: string;
+  };
+  punchOutLocation?: { // Location at punch-out
+    lat: number;
+    lng: number;
+    address?: string;
+  };
 }
 
 // Payroll types

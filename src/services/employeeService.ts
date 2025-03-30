@@ -2,83 +2,36 @@
 import { User, ApiResponse } from '@/types';
 import { authService } from './authService';
 
-// Mock employee data for demonstration
-const mockEmployees: User[] = [
-  {
-    id: '1',
-    email: 'admin@example.com',
-    firstName: 'Admin',
-    lastName: 'User',
-    role: 'admin',
-    position: 'Manager',
-    hourlyRate: 25,
-    phoneNumber: '555-123-4567',
-    avatar: 'https://i.pravatar.cc/150?img=1'
-  },
-  {
-    id: '2',
-    email: 'employee@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    role: 'employee',
-    position: 'Barista',
-    hourlyRate: 15.5,
-    phoneNumber: '555-987-6543',
-    avatar: 'https://i.pravatar.cc/150?img=2'
-  },
-  {
-    id: '3',
-    email: 'jane@example.com',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    role: 'employee',
-    position: 'Barista',
-    hourlyRate: 15.5,
-    phoneNumber: '555-546-8765',
-    avatar: 'https://i.pravatar.cc/150?img=3'
-  },
-  {
-    id: '4',
-    email: 'robert@example.com',
-    firstName: 'Robert',
-    lastName: 'Johnson',
-    role: 'employee',
-    position: 'Server',
-    hourlyRate: 12.75,
-    phoneNumber: '555-789-0123',
-    avatar: 'https://i.pravatar.cc/150?img=4'
-  },
-  {
-    id: '5',
-    email: 'sarah@example.com',
-    firstName: 'Sarah',
-    lastName: 'Williams',
-    role: 'employee',
-    position: 'Cook',
-    hourlyRate: 17.25,
-    phoneNumber: '555-321-6547',
-    avatar: 'https://i.pravatar.cc/150?img=5'
-  }
-];
+// Base API URL - use the same as other services
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.shiftmaster.com/api';
 
-// Employee service
+// Employee service with real API endpoints
 export const employeeService = {
   // Get all employees
   getEmployees: async (): Promise<ApiResponse<User[]>> => {
-    // Check if user is authenticated and an admin
     if (!authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/employees`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      // Return mock data for now
-      return { data: mockEmployees };
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to fetch employees' };
+      }
+      
+      const data = await response.json();
+      return { data: data.employees };
     } catch (error) {
       console.error('Error fetching employees:', error);
-      return { error: 'Failed to fetch employees' };
+      return { error: 'Network error when fetching employees' };
     }
   },
   
@@ -89,19 +42,24 @@ export const employeeService = {
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/employees/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      const employee = mockEmployees.find(emp => emp.id === id);
-      
-      if (employee) {
-        return { data: employee };
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to fetch employee' };
       }
       
-      return { error: 'Employee not found' };
+      const data = await response.json();
+      return { data: data.employee };
     } catch (error) {
       console.error('Error fetching employee:', error);
-      return { error: 'Failed to fetch employee details' };
+      return { error: 'Network error when fetching employee details' };
     }
   },
   
@@ -112,26 +70,26 @@ export const employeeService = {
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/employees`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(employeeData)
+      });
       
-      // Mock response
-      const newEmployee: User = {
-        id: Date.now().toString(),
-        email: employeeData.email || '',
-        firstName: employeeData.firstName || '',
-        lastName: employeeData.lastName || '',
-        role: 'employee',
-        position: employeeData.position,
-        hourlyRate: employeeData.hourlyRate,
-        phoneNumber: employeeData.phoneNumber,
-        avatar: employeeData.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`
-      };
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to create employee' };
+      }
       
-      return { data: newEmployee, message: 'Employee created successfully' };
+      const data = await response.json();
+      return { data: data.employee, message: 'Employee created successfully' };
     } catch (error) {
       console.error('Error creating employee:', error);
-      return { error: 'Failed to create employee' };
+      return { error: 'Network error when creating employee' };
     }
   },
   
@@ -142,17 +100,29 @@ export const employeeService = {
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/employees/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(employeeData)
+      });
       
-      // Mock response
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to update employee' };
+      }
+      
+      const data = await response.json();
       return { 
-        data: { ...employeeData, id } as User, 
+        data: data.employee, 
         message: 'Employee updated successfully' 
       };
     } catch (error) {
       console.error('Error updating employee:', error);
-      return { error: 'Failed to update employee' };
+      return { error: 'Network error when updating employee' };
     }
   },
   
@@ -163,14 +133,83 @@ export const employeeService = {
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/employees/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
-      // Mock response
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to delete employee' };
+      }
+      
       return { message: 'Employee deleted successfully' };
     } catch (error) {
       console.error('Error deleting employee:', error);
-      return { error: 'Failed to delete employee' };
+      return { error: 'Network error when deleting employee' };
+    }
+  },
+  
+  // Get employees by department
+  getEmployeesByDepartment: async (department: string): Promise<ApiResponse<User[]>> => {
+    if (!authService.isAuthenticated()) {
+      return { error: 'Not authenticated' };
+    }
+    
+    try {
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/employees/department/${department}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to fetch employees' };
+      }
+      
+      const data = await response.json();
+      return { data: data.employees };
+    } catch (error) {
+      console.error('Error fetching employees by department:', error);
+      return { error: 'Network error when fetching employees' };
+    }
+  },
+  
+  // Upload employee profile photo
+  uploadProfilePhoto: async (employeeId: string, photoData: File): Promise<ApiResponse<{photoUrl: string}>> => {
+    if (!authService.isAuthenticated()) {
+      return { error: 'Not authenticated' };
+    }
+    
+    try {
+      const token = authService.getToken();
+      const formData = new FormData();
+      formData.append('photo', photoData);
+      
+      const response = await fetch(`${API_URL}/employees/${employeeId}/photo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to upload profile photo' };
+      }
+      
+      const data = await response.json();
+      return { data: data, message: 'Profile photo uploaded successfully' };
+    } catch (error) {
+      console.error('Error uploading profile photo:', error);
+      return { error: 'Network error when uploading profile photo' };
     }
   }
 };

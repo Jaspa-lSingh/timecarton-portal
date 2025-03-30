@@ -2,139 +2,8 @@
 import { Shift, ApiResponse, ShiftChangeRequest, ShiftCoverRequest } from '@/types';
 import { authService } from './authService';
 
-// Mock shifts data
-const mockShifts: Shift[] = [
-  {
-    id: '1',
-    employeeId: '2',
-    startTime: '2023-06-12T09:00:00',
-    endTime: '2023-06-12T17:00:00',
-    position: 'Barista',
-    status: 'completed',
-    location: 'Main Store'
-  },
-  {
-    id: '2',
-    employeeId: '3',
-    startTime: '2023-06-12T08:00:00',
-    endTime: '2023-06-12T16:00:00',
-    position: 'Barista',
-    status: 'completed',
-    location: 'Main Store'
-  },
-  {
-    id: '3',
-    employeeId: '4',
-    startTime: '2023-06-12T16:00:00',
-    endTime: '2023-06-13T00:00:00',
-    position: 'Server',
-    status: 'completed',
-    location: 'Main Store'
-  },
-  {
-    id: '4',
-    employeeId: '5',
-    startTime: '2023-06-12T11:00:00',
-    endTime: '2023-06-12T19:00:00',
-    position: 'Cook',
-    status: 'completed',
-    location: 'Main Store'
-  },
-  {
-    id: '5',
-    employeeId: '2',
-    startTime: '2023-06-13T09:00:00',
-    endTime: '2023-06-13T17:00:00',
-    position: 'Barista',
-    status: 'scheduled',
-    location: 'Main Store'
-  },
-  {
-    id: '6',
-    employeeId: '3',
-    startTime: '2023-06-13T08:00:00',
-    endTime: '2023-06-13T16:00:00',
-    position: 'Barista',
-    status: 'scheduled',
-    location: 'Main Store'
-  },
-  {
-    id: '7',
-    employeeId: '4',
-    startTime: '2023-06-13T16:00:00',
-    endTime: '2023-06-14T00:00:00',
-    position: 'Server',
-    status: 'pending',
-    location: 'Main Store'
-  },
-  {
-    id: '8',
-    employeeId: '5',
-    startTime: '2023-06-13T11:00:00',
-    endTime: '2023-06-13T19:00:00',
-    position: 'Cook',
-    status: 'pending',
-    location: 'Main Store'
-  }
-];
-
-// Mock shift swap requests
-const mockShiftSwapRequests: ShiftChangeRequest[] = [
-  {
-    id: '1',
-    employeeId: '2',
-    myShiftId: '5',
-    targetShiftId: '7',
-    myShiftDate: '2024-06-15T09:00:00',
-    targetShiftDate: '2024-06-16T09:00:00',
-    reason: 'Family event',
-    status: 'pending',
-    requestDate: '2024-06-10T14:30:00',
-    updatedAt: '2024-06-10T14:30:00'
-  },
-  {
-    id: '2',
-    employeeId: '3',
-    myShiftId: '6',
-    targetShiftId: '8',
-    myShiftDate: '2024-07-02T10:00:00',
-    targetShiftDate: '2024-07-03T10:00:00',
-    reason: 'Medical appointment',
-    status: 'approved',
-    requestDate: '2024-06-08T11:20:00',
-    updatedAt: '2024-06-09T09:15:00'
-  }
-];
-
-// Mock shift cover requests
-const mockShiftCoverRequests: ShiftCoverRequest[] = [
-  {
-    id: '1',
-    employeeId: '2',
-    shiftId: '5',
-    shiftDate: '2024-06-20T14:00:00',
-    reason: 'Personal emergency',
-    status: 'pending',
-    requestDate: '2024-06-15T10:30:00',
-    updatedAt: '2024-06-15T10:30:00'
-  },
-  {
-    id: '2',
-    employeeId: '3',
-    shiftId: '6',
-    shiftDate: '2024-06-22T08:00:00',
-    reason: 'Doctor appointment',
-    status: 'pending',
-    requestDate: '2024-06-16T09:45:00',
-    updatedAt: '2024-06-16T09:45:00'
-  }
-];
-
-// Function to get current date in format YYYY-MM-DD
-const getCurrentDate = () => {
-  const date = new Date();
-  return date.toISOString().split('T')[0];
-};
+// Base API URL - use the same as other services
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.shiftmaster.com/api';
 
 // Shift service
 export const shiftService = {
@@ -145,22 +14,24 @@ export const shiftService = {
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      const user = authService.getCurrentUser();
-      
-      if (user?.role === 'admin') {
-        // Admins can see all shifts
-        return { data: mockShifts };
-      } else {
-        // Employees can see only their shifts
-        const employeeShifts = mockShifts.filter(shift => shift.employeeId === user?.id);
-        return { data: employeeShifts };
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to fetch shifts' };
       }
+      
+      const data = await response.json();
+      return { data: data.shifts };
     } catch (error) {
       console.error('Error fetching shifts:', error);
-      return { error: 'Failed to fetch shifts' };
+      return { error: 'Network error when fetching shifts' };
     }
   },
   
@@ -171,22 +42,24 @@ export const shiftService = {
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/employee/${employeeId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      const user = authService.getCurrentUser();
-      
-      // Admins can see any employee's shifts
-      // Employees can only see their own shifts
-      if (user?.role === 'admin' || user?.id === employeeId) {
-        const employeeShifts = mockShifts.filter(shift => shift.employeeId === employeeId);
-        return { data: employeeShifts };
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to fetch employee shifts' };
       }
       
-      return { error: 'Not authorized to view these shifts' };
+      const data = await response.json();
+      return { data: data.shifts };
     } catch (error) {
       console.error('Error fetching employee shifts:', error);
-      return { error: 'Failed to fetch shifts' };
+      return { error: 'Network error when fetching shifts' };
     }
   },
   
@@ -197,35 +70,30 @@ export const shiftService = {
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const token = authService.getToken();
+      let url = `${API_URL}/shifts/date/${startDate}`;
       
-      const user = authService.getCurrentUser();
-      let filteredShifts = [...mockShifts];
-      
-      // Filter by date range
-      if (startDate && endDate) {
-        filteredShifts = filteredShifts.filter(shift => {
-          const shiftDate = shift.startTime.split('T')[0];
-          return shiftDate >= startDate && shiftDate <= endDate;
-        });
-      } else if (startDate) {
-        // Filter by single date
-        filteredShifts = filteredShifts.filter(shift => {
-          const shiftDate = shift.startTime.split('T')[0];
-          return shiftDate === startDate;
-        });
+      if (endDate) {
+        url += `?endDate=${endDate}`;
       }
       
-      // Filter by user role
-      if (user?.role !== 'admin') {
-        filteredShifts = filteredShifts.filter(shift => shift.employeeId === user?.id);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to fetch shifts' };
       }
       
-      return { data: filteredShifts };
+      const data = await response.json();
+      return { data: data.shifts };
     } catch (error) {
       console.error('Error fetching shifts by date:', error);
-      return { error: 'Failed to fetch shifts' };
+      return { error: 'Network error when fetching shifts' };
     }
   },
   
@@ -236,25 +104,26 @@ export const shiftService = {
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shiftData)
+      });
       
-      // Mock response
-      const newShift: Shift = {
-        id: Date.now().toString(),
-        employeeId: shiftData.employeeId || '',
-        startTime: shiftData.startTime || '',
-        endTime: shiftData.endTime || '',
-        position: shiftData.position,
-        notes: shiftData.notes,
-        status: shiftData.status || 'scheduled',
-        location: shiftData.location
-      };
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to create shift' };
+      }
       
-      return { data: newShift, message: 'Shift created successfully' };
+      const data = await response.json();
+      return { data: data.shift, message: 'Shift created successfully' };
     } catch (error) {
       console.error('Error creating shift:', error);
-      return { error: 'Failed to create shift' };
+      return { error: 'Network error when creating shift' };
     }
   },
   
@@ -265,27 +134,26 @@ export const shiftService = {
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shiftData)
+      });
       
-      // Find the shift to update
-      const existingShift = mockShifts.find(shift => shift.id === id);
-      
-      if (!existingShift) {
-        return { error: 'Shift not found' };
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to update shift' };
       }
       
-      // Mock response
-      const updatedShift: Shift = {
-        ...existingShift,
-        ...shiftData,
-        id
-      };
-      
-      return { data: updatedShift, message: 'Shift updated successfully' };
+      const data = await response.json();
+      return { data: data.shift, message: 'Shift updated successfully' };
     } catch (error) {
       console.error('Error updating shift:', error);
-      return { error: 'Failed to update shift' };
+      return { error: 'Network error when updating shift' };
     }
   },
   
@@ -296,21 +164,23 @@ export const shiftService = {
     }
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
-      // Check if shift exists
-      const shift = mockShifts.find(s => s.id === id);
-      
-      if (!shift) {
-        return { error: 'Shift not found' };
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to delete shift' };
       }
       
-      // Mock response
       return { message: 'Shift deleted successfully' };
     } catch (error) {
       console.error('Error deleting shift:', error);
-      return { error: 'Failed to delete shift' };
+      return { error: 'Network error when deleting shift' };
     }
   },
 
@@ -321,22 +191,24 @@ export const shiftService = {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const user = authService.getCurrentUser();
-
-      if (user?.role === 'admin') {
-        // Admins can see all swap requests
-        return { data: mockShiftSwapRequests };
-      } else {
-        // Employees can see only their swap requests
-        const employeeRequests = mockShiftSwapRequests.filter(req => req.employeeId === user?.id);
-        return { data: employeeRequests };
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/swap-requests`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to fetch shift swap requests' };
       }
+      
+      const data = await response.json();
+      return { data: data.requests };
     } catch (error) {
       console.error('Error fetching shift swap requests:', error);
-      return { error: 'Failed to fetch shift swap requests' };
+      return { error: 'Network error when fetching shift swap requests' };
     }
   },
 
@@ -347,22 +219,24 @@ export const shiftService = {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const user = authService.getCurrentUser();
-
-      if (user?.role === 'admin') {
-        // Admins can see all cover requests
-        return { data: mockShiftCoverRequests };
-      } else {
-        // Employees can see only their cover requests
-        const employeeRequests = mockShiftCoverRequests.filter(req => req.employeeId === user?.id);
-        return { data: employeeRequests };
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/cover-requests`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to fetch shift cover requests' };
       }
+      
+      const data = await response.json();
+      return { data: data.requests };
     } catch (error) {
       console.error('Error fetching shift cover requests:', error);
-      return { error: 'Failed to fetch shift cover requests' };
+      return { error: 'Network error when fetching shift cover requests' };
     }
   },
 
@@ -373,29 +247,26 @@ export const shiftService = {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      const user = authService.getCurrentUser();
-
-      // Mock response
-      const newRequest: ShiftChangeRequest = {
-        id: Date.now().toString(),
-        employeeId: user?.id || '',
-        myShiftId: requestData.myShiftId || '',
-        targetShiftId: requestData.targetShiftId || '',
-        myShiftDate: requestData.myShiftDate || '',
-        targetShiftDate: requestData.targetShiftDate || '',
-        reason: requestData.reason || '',
-        status: 'pending',
-        requestDate: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      return { data: newRequest, message: 'Shift swap request created successfully' };
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/swap-requests`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to create shift swap request' };
+      }
+      
+      const data = await response.json();
+      return { data: data.request, message: 'Shift swap request created successfully' };
     } catch (error) {
       console.error('Error creating shift swap request:', error);
-      return { error: 'Failed to create shift swap request' };
+      return { error: 'Network error when creating shift swap request' };
     }
   },
 
@@ -406,27 +277,26 @@ export const shiftService = {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      const user = authService.getCurrentUser();
-
-      // Mock response
-      const newRequest: ShiftCoverRequest = {
-        id: Date.now().toString(),
-        employeeId: user?.id || '',
-        shiftId: requestData.shiftId || '',
-        shiftDate: requestData.shiftDate || '',
-        reason: requestData.reason || '',
-        status: 'pending',
-        requestDate: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      return { data: newRequest, message: 'Shift cover request created successfully' };
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/cover-requests`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to create shift cover request' };
+      }
+      
+      const data = await response.json();
+      return { data: data.request, message: 'Shift cover request created successfully' };
     } catch (error) {
       console.error('Error creating shift cover request:', error);
-      return { error: 'Failed to create shift cover request' };
+      return { error: 'Network error when creating shift cover request' };
     }
   },
 
@@ -441,28 +311,189 @@ export const shiftService = {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 600));
-
-      // Find the request to update
-      const requestsArray = type === 'swap' ? mockShiftSwapRequests : mockShiftCoverRequests;
-      const existingRequest = requestsArray.find(req => req.id === requestId);
-
-      if (!existingRequest) {
-        return { error: 'Request not found' };
+      const token = authService.getToken();
+      const endpoint = type === 'swap' ? 'swap-requests' : 'cover-requests';
+      
+      const response = await fetch(`${API_URL}/shifts/${endpoint}/${requestId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to update shift request' };
       }
-
-      // Update request
-      existingRequest.status = status;
-      existingRequest.updatedAt = new Date().toISOString();
-
+      
+      const data = await response.json();
       return { 
-        data: existingRequest, 
+        data: data.request, 
         message: `Request ${status}`
       };
     } catch (error) {
       console.error('Error updating shift request:', error);
-      return { error: 'Failed to update shift request' };
+      return { error: 'Network error when updating shift request' };
+    }
+  },
+  
+  // Approve a shift (employee only)
+  approveShift: async (shiftId: string): Promise<ApiResponse<Shift>> => {
+    if (!authService.isAuthenticated()) {
+      return { error: 'Not authenticated' };
+    }
+    
+    try {
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/${shiftId}/approve`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to approve shift' };
+      }
+      
+      const data = await response.json();
+      return { data: data.shift, message: 'Shift approved successfully' };
+    } catch (error) {
+      console.error('Error approving shift:', error);
+      return { error: 'Network error when approving shift' };
+    }
+  },
+  
+  // Cancel a shift (admin only)
+  cancelShift: async (shiftId: string): Promise<ApiResponse<Shift>> => {
+    if (!authService.isAdmin()) {
+      return { error: 'Not authorized' };
+    }
+    
+    try {
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/${shiftId}/cancel`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to cancel shift' };
+      }
+      
+      const data = await response.json();
+      return { data: data.shift, message: 'Shift cancelled successfully' };
+    } catch (error) {
+      console.error('Error cancelling shift:', error);
+      return { error: 'Network error when cancelling shift' };
+    }
+  },
+  
+  // Assign shift to multiple employees
+  assignShiftToEmployees: async (
+    shiftData: Partial<Shift>, 
+    employeeIds: string[]
+  ): Promise<ApiResponse<Shift[]>> => {
+    if (!authService.isAdmin()) {
+      return { error: 'Not authorized' };
+    }
+    
+    try {
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/bulk-assign`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          shiftData,
+          employeeIds
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to assign shifts' };
+      }
+      
+      const data = await response.json();
+      return { data: data.shifts, message: 'Shifts assigned successfully' };
+    } catch (error) {
+      console.error('Error assigning shifts:', error);
+      return { error: 'Network error when assigning shifts' };
+    }
+  },
+  
+  // Assign shift to all employees in a department
+  assignShiftToDepartment: async (
+    shiftData: Partial<Shift>, 
+    department: string
+  ): Promise<ApiResponse<Shift[]>> => {
+    if (!authService.isAdmin()) {
+      return { error: 'Not authorized' };
+    }
+    
+    try {
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/department-assign`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          shiftData,
+          department
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to assign department shifts' };
+      }
+      
+      const data = await response.json();
+      return { data: data.shifts, message: `Shifts assigned to ${department} department` };
+    } catch (error) {
+      console.error('Error assigning department shifts:', error);
+      return { error: 'Network error when assigning shifts' };
+    }
+  },
+  
+  // Get shifts for a specific department
+  getShiftsByDepartment: async (department: string): Promise<ApiResponse<Shift[]>> => {
+    if (!authService.isAuthenticated()) {
+      return { error: 'Not authenticated' };
+    }
+    
+    try {
+      const token = authService.getToken();
+      const response = await fetch(`${API_URL}/shifts/department/${department}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: errorData.message || 'Failed to fetch department shifts' };
+      }
+      
+      const data = await response.json();
+      return { data: data.shifts };
+    } catch (error) {
+      console.error('Error fetching department shifts:', error);
+      return { error: 'Network error when fetching shifts' };
     }
   }
 };
