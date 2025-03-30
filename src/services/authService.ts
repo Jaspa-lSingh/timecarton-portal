@@ -1,3 +1,4 @@
+
 import { User } from '@/types';
 import { supabase, isAuthenticated } from '@/lib/supabase';
 
@@ -10,6 +11,8 @@ export interface AuthResponse {
 
 // Cache the current user to avoid repeated calls to getUser
 let currentUserCache: User | null = null;
+// Cache the access token
+let currentTokenCache: string | null = null;
 
 // Authentication service methods
 export const authService = {
@@ -86,6 +89,8 @@ export const authService = {
 
         // Update cache
         currentUserCache = user;
+        // Cache the token
+        currentTokenCache = data.session?.access_token || null;
 
         return { data: user };
       }
@@ -106,6 +111,7 @@ export const authService = {
 
       // Clear cache
       currentUserCache = null;
+      currentTokenCache = null;
 
       return { data: true };
     } catch (error) {
@@ -152,6 +158,13 @@ export const authService = {
 
         // Update cache
         currentUserCache = user;
+
+        // Get and cache the token
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          currentTokenCache = sessionData.session.access_token;
+        }
+        
         return user;
       } catch (error) {
         console.error('Get current user error:', error);
@@ -229,4 +242,32 @@ export const authService = {
       return { error: error instanceof Error ? error.message : 'Failed to update profile' };
     }
   },
+
+  // Get authentication token for API requests
+  getToken(): string | null {
+    if (currentTokenCache) return currentTokenCache;
+    
+    // If not in cache, try to get it asynchronously
+    const getTokenAsync = async (): Promise<string | null> => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting token:', error);
+          return null;
+        }
+        
+        const token = data.session?.access_token || null;
+        // Cache the token
+        currentTokenCache = token;
+        return token;
+      } catch (error) {
+        console.error('Get token error:', error);
+        return null;
+      }
+    };
+    
+    // Start the async operation but return null synchronously
+    getTokenAsync();
+    return null;
+  }
 };
