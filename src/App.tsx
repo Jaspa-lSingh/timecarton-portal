@@ -18,6 +18,9 @@ import AdminSchedule from "./pages/admin/Schedule";
 import AdminEmployees from "./pages/admin/Employees";
 import AdminTimeTracking from "./pages/admin/TimeTracking";
 import AdminPayroll from "./pages/admin/Payroll";
+import AdminInquiryCenter from "./pages/admin/InquiryCenter";
+import AdminAttendance from "./pages/admin/Attendance";
+import AdminShiftChanges from "./pages/admin/ShiftChanges";
 
 // Employee Pages
 import EmployeeDashboard from "./pages/employee/Dashboard";
@@ -88,6 +91,30 @@ const App = () => (
             element={
               <ProtectedRoute allowedRole="admin" requiredPermission="manage_payroll">
                 <AdminPayroll />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/inquiry-center" 
+            element={
+              <ProtectedRoute allowedRole="admin">
+                <AdminInquiryCenter />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/attendance" 
+            element={
+              <ProtectedRoute allowedRole="admin">
+                <AdminAttendance />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/shift-changes" 
+            element={
+              <ProtectedRoute allowedRole="admin">
+                <AdminShiftChanges />
               </ProtectedRoute>
             } 
           />

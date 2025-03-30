@@ -1,11 +1,23 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Menu, X, Calendar, Users, DollarSign, Clock, Settings, LogOut, BarChart3 } from 'lucide-react';
+import { 
+  Menu, 
+  X, 
+  Calendar, 
+  Users, 
+  DollarSign, 
+  Clock, 
+  Settings, 
+  LogOut, 
+  BarChart3, 
+  HelpCircle,
+  ClipboardList,
+  RefreshCw
+} from 'lucide-react';
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toast } = useToast();
@@ -29,6 +41,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/employees', label: 'Employees', icon: <Users size={20} /> },
     { path: '/admin/time-tracking', label: 'Time Tracking', icon: <Clock size={20} /> },
     { path: '/admin/payroll', label: 'Payroll', icon: <DollarSign size={20} /> },
+    { path: '/admin/inquiry-center', label: 'Employee Inquiry', icon: <HelpCircle size={20} /> },
+    { path: '/admin/attendance', label: 'Attendance', icon: <ClipboardList size={20} /> },
+    { path: '/admin/shift-changes', label: 'Shift Changes', icon: <RefreshCw size={20} /> },
     { path: '/admin/settings', label: 'Settings', icon: <Settings size={20} /> },
   ];
   
@@ -42,14 +57,12 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar - hidden on mobile unless menu is open */}
       <aside 
         className={`${
           isMobile ? (menuOpen ? 'fixed inset-0 z-50 flex' : 'hidden') : 'block'
         } w-64 bg-white border-r border-gray-200 shadow-sm`}
       >
         <div className="flex flex-col h-full">
-          {/* Sidebar header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
               <div className="bg-brand-600 text-white p-1 rounded">
@@ -64,7 +77,6 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             )}
           </div>
           
-          {/* Sidebar content */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navItems.map((item) => (
               <Link
@@ -83,7 +95,6 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             ))}
           </nav>
           
-          {/* Sidebar footer */}
           <div className="p-4 border-t">
             <Button 
               variant="outline" 
@@ -97,9 +108,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
       </aside>
       
-      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
         <header className="bg-white border-b border-gray-200 shadow-sm">
           <div className="flex items-center justify-between px-4 py-2">
             {isMobile && (
@@ -125,7 +134,6 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         </header>
         
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto bg-gray-50">
           {children}
         </main>
