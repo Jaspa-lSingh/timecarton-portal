@@ -408,6 +408,42 @@ export const shiftService = {
       console.error('Error fetching department shifts:', error);
       return { error: 'Network error when fetching shifts' };
     }
+  },
+
+  // Assign shift to a department (admin only)
+  assignShiftToDepartment: async (
+    shiftData: Partial<Shift>,
+    department: string
+  ): Promise<ApiResponse<Shift[]>> => {
+    if (!authService.isAdmin()) {
+      return { error: 'Not authorized' };
+    }
+
+    try {
+      // First, get all employees in the department
+      const { data: employees, error: empError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('department', department);
+
+      if (empError) {
+        console.error(`Error fetching employees in department ${department}:`, empError);
+        return { error: empError.message };
+      }
+
+      if (!employees || employees.length === 0) {
+        return { error: 'No employees found in the specified department' };
+      }
+
+      // Get employee IDs
+      const employeeIds = employees.map(emp => emp.id);
+
+      // Use the existing method to assign shifts to these employees
+      return await shiftService.assignShiftToEmployees(shiftData, employeeIds);
+    } catch (error) {
+      console.error(`Error assigning shifts to department ${department}:`, error);
+      return { error: 'Network error when assigning shifts to department' };
+    }
   }
 };
 
