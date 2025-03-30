@@ -1,52 +1,72 @@
 
-import { User, ApiResponse, UserRole } from '@/types';
+import { User, ApiResponse } from '@/types';
+import { supabase } from '@/lib/supabase';
 
-// Base API URL - replace with your Django backend URL when deployed
-const API_URL = 'http://localhost:8000/api';
+// Helper function to convert Supabase user to our app User type
+const mapUserData = (user: any, userData: any = {}): User => {
+  return {
+    id: user.id,
+    email: user.email || '',
+    firstName: userData.first_name || '',
+    lastName: userData.last_name || '',
+    role: userData.role || 'employee',
+    employeeId: userData.employee_id,
+    position: userData.position,
+    department: userData.department,
+    hourlyRate: userData.hourly_rate,
+    phoneNumber: userData.phone_number,
+    avatar: userData.avatar_url,
+    address: {
+      street: userData.street,
+      city: userData.city,
+      state: userData.state,
+      country: userData.country,
+      zipCode: userData.zip_code,
+    }
+  };
+};
 
 // Authentication service
 export const authService = {
   // Login user
-  login: async (email: string, password: string, role: UserRole): Promise<ApiResponse<User>> => {
+  login: async (email: string, password: string, role: string): Promise<ApiResponse<User>> => {
     try {
-      // In a real app, this would make an API call to your Django backend
-      console.log(`Attempting to login with ${email} as ${role}`);
-      
-      // Mock login for now - will be replaced with actual API call
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      if (email === 'admin@example.com' && password === 'password' && role === 'admin') {
-        const userData: User = {
-          id: '1',
-          email: 'admin@example.com',
-          firstName: 'Admin',
-          lastName: 'User',
-          role: 'admin',
-          position: 'Manager',
-        };
-        
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', 'mock-jwt-token-for-admin');
-        return { data: userData };
-      } 
-      else if (email === 'employee@example.com' && password === 'password' && role === 'employee') {
-        const userData: User = {
-          id: '2',
-          email: 'employee@example.com',
-          firstName: 'John',
-          lastName: 'Doe',
-          role: 'employee',
-          position: 'Staff',
-          hourlyRate: 15.5,
-        };
-        
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', 'mock-jwt-token-for-employee');
-        return { data: userData };
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) {
+        return { error: signInError.message };
       }
+
+      if (!signInData.user) {
+        return { error: 'User not found' };
+      }
+
+      // Fetch user profile data from users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', signInData.user.id)
+        .single();
+
+      if (userError) {
+        return { error: userError.message };
+      }
+
+      // Check if the user has the correct role
+      if (role !== userData.role) {
+        await supabase.auth.signOut(); // Sign out if wrong role
+        return { error: `Invalid login. You don't have ${role} permissions.` };
+      }
+
+      const user = mapUserData(signInData.user, userData);
       
-      return { error: 'Invalid credentials' };
+      // Save user to localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      return { data: user };
     } catch (error) {
       console.error('Login error:', error);
       return { error: 'An unexpected error occurred' };
@@ -54,9 +74,9 @@ export const authService = {
   },
   
   // Logout user
-  logout: () => {
+  logout: async (): Promise<void> => {
+    await supabase.auth.signOut();
     localStorage.removeItem('user');
-    localStorage.removeItem('token');
   },
   
   // Get current user
@@ -70,7 +90,9 @@ export const authService = {
   
   // Check if user is authenticated
   isAuthenticated: (): boolean => {
-    return !!localStorage.getItem('token');
+    return supabase.auth.getSession().then(({ data }) => {
+      return !!data.session;
+    }).catch(() => false);
   },
   
   // Check if user is admin
@@ -80,32 +102,66 @@ export const authService = {
   },
   
   // Get auth token
-  getToken: (): string | null => {
-    return localStorage.getItem('token');
+  getToken: async (): Promise<string | null> => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || null;
   },
   
   // Register user
   register: async (userData: Partial<User>, password: string): Promise<ApiResponse<User>> => {
     try {
-      // This would make an API call to register a user in your Django backend
-      console.log('Register user:', userData);
-      
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Mock registration response
-      const newUser: User = {
-        id: `${Date.now()}`,
+      // Register user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email || '',
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
+        password: password,
+        options: {
+          data: {
+            first_name: userData.firstName,
+            last_name: userData.lastName,
+            role: userData.role || 'employee',
+          }
+        }
+      });
+
+      if (authError) {
+        return { error: authError.message };
+      }
+
+      if (!authData.user) {
+        return { error: 'Failed to create user' };
+      }
+
+      // Insert additional user data into the users table
+      const { error: insertError } = await supabase.from('users').insert({
+        id: authData.user.id,
+        email: userData.email,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
         role: userData.role || 'employee',
+        employee_id: userData.employeeId,
         position: userData.position,
-        hourlyRate: userData.hourlyRate,
-        phoneNumber: userData.phoneNumber,
-      };
-      
-      return { data: newUser, message: 'User registered successfully!' };
+        department: userData.department,
+        hourly_rate: userData.hourlyRate,
+        phone_number: userData.phoneNumber,
+      });
+
+      if (insertError) {
+        console.error('Error inserting user data:', insertError);
+        return { error: insertError.message };
+      }
+
+      const user = mapUserData(authData.user, {
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        role: userData.role || 'employee',
+        employee_id: userData.employeeId,
+        position: userData.position,
+        department: userData.department,
+        hourly_rate: userData.hourlyRate,
+        phone_number: userData.phoneNumber,
+      });
+
+      return { data: user, message: 'User registered successfully!' };
     } catch (error) {
       console.error('Registration error:', error);
       return { error: 'An unexpected error occurred' };
@@ -115,12 +171,29 @@ export const authService = {
   // Update user profile
   updateProfile: async (userId: string, userData: Partial<User>): Promise<ApiResponse<User>> => {
     try {
-      console.log('Update profile for user:', userId, userData);
+      // Update in users table
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          position: userData.position,
+          department: userData.department,
+          hourly_rate: userData.hourlyRate,
+          phone_number: userData.phoneNumber,
+          street: userData.address?.street,
+          city: userData.address?.city,
+          state: userData.address?.state,
+          country: userData.address?.country,
+          zip_code: userData.address?.zipCode,
+        })
+        .eq('id', userId);
       
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      if (updateError) {
+        return { error: updateError.message };
+      }
       
-      // Get current user
+      // Get current user and update it
       const currentUser = authService.getCurrentUser();
       
       if (!currentUser) {
@@ -153,7 +226,6 @@ export const authService = {
     if (user.role === 'admin') return true;
     
     // For employee, check specific permissions
-    // In a real app, this would check against a list of permissions from the backend
     const employeePermissions = [
       'view_own_schedule',
       'view_own_timesheet',

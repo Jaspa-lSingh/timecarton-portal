@@ -1,34 +1,52 @@
 
 import { User, ApiResponse } from '@/types';
+import { supabase } from '@/lib/supabase';
 import { authService } from './authService';
 
-// Base API URL - use the same as other services
-const API_URL = import.meta.env.VITE_API_URL || 'https://api.shiftmaster.com/api';
+// Map database user to our app User type
+const mapToUser = (dbUser: any): User => {
+  return {
+    id: dbUser.id,
+    email: dbUser.email,
+    firstName: dbUser.first_name || '',
+    lastName: dbUser.last_name || '',
+    role: dbUser.role || 'employee',
+    employeeId: dbUser.employee_id,
+    position: dbUser.position,
+    department: dbUser.department,
+    hourlyRate: dbUser.hourly_rate,
+    phoneNumber: dbUser.phone_number,
+    avatar: dbUser.avatar_url,
+    address: {
+      street: dbUser.street,
+      city: dbUser.city,
+      state: dbUser.state,
+      country: dbUser.country,
+      zipCode: dbUser.zip_code,
+    }
+  };
+};
 
 // Employee service with real API endpoints
 export const employeeService = {
   // Get all employees
   getEmployees: async (): Promise<ApiResponse<User[]>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/employees`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to fetch employees' };
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'employee');
+        
+      if (error) {
+        return { error: error.message || 'Failed to fetch employees' };
       }
       
-      const data = await response.json();
-      return { data: data.employees };
+      const employees = data.map(mapToUser);
+      return { data: employees };
     } catch (error) {
       console.error('Error fetching employees:', error);
       return { error: 'Network error when fetching employees' };
@@ -37,26 +55,22 @@ export const employeeService = {
   
   // Get employee by ID
   getEmployeeById: async (id: string): Promise<ApiResponse<User>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/employees/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to fetch employee' };
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error) {
+        return { error: error.message || 'Failed to fetch employee' };
       }
       
-      const data = await response.json();
-      return { data: data.employee };
+      return { data: mapToUser(data) };
     } catch (error) {
       console.error('Error fetching employee:', error);
       return { error: 'Network error when fetching employee details' };
@@ -70,23 +84,61 @@ export const employeeService = {
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/employees`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(employeeData)
+      // First create auth user
+      const password = Math.random().toString(36).slice(-8); // Generate random password
+      
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: employeeData.email || '',
+        password: password,
+        email_confirm: true,
+        user_metadata: {
+          first_name: employeeData.firstName,
+          last_name: employeeData.lastName,
+          role: 'employee'
+        }
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to create employee' };
+      if (authError) {
+        return { error: authError.message };
       }
       
-      const data = await response.json();
-      return { data: data.employee, message: 'Employee created successfully' };
+      if (!authData.user) {
+        return { error: 'Failed to create user auth record' };
+      }
+      
+      // Then add user data to users table
+      const { error } = await supabase.from('users').insert({
+        id: authData.user.id,
+        email: employeeData.email,
+        first_name: employeeData.firstName,
+        last_name: employeeData.lastName,
+        role: 'employee',
+        employee_id: employeeData.employeeId,
+        position: employeeData.position,
+        department: employeeData.department,
+        hourly_rate: employeeData.hourlyRate,
+        phone_number: employeeData.phoneNumber,
+      });
+      
+      if (error) {
+        return { error: error.message || 'Failed to create employee' };
+      }
+      
+      // Get the newly created user
+      const { data, error: fetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+        
+      if (fetchError) {
+        return { error: fetchError.message };
+      }
+      
+      return { 
+        data: mapToUser(data), 
+        message: 'Employee created successfully. Temporary password: ' + password 
+      };
     } catch (error) {
       console.error('Error creating employee:', error);
       return { error: 'Network error when creating employee' };
@@ -100,24 +152,41 @@ export const employeeService = {
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/employees/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(employeeData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to update employee' };
+      const { error } = await supabase
+        .from('users')
+        .update({
+          first_name: employeeData.firstName,
+          last_name: employeeData.lastName,
+          position: employeeData.position,
+          department: employeeData.department,
+          hourly_rate: employeeData.hourlyRate,
+          phone_number: employeeData.phoneNumber,
+          employee_id: employeeData.employeeId,
+          street: employeeData.address?.street,
+          city: employeeData.address?.city,
+          state: employeeData.address?.state,
+          country: employeeData.address?.country,
+          zip_code: employeeData.address?.zipCode,
+        })
+        .eq('id', id);
+        
+      if (error) {
+        return { error: error.message || 'Failed to update employee' };
       }
       
-      const data = await response.json();
+      // Get the updated user
+      const { data, error: fetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (fetchError) {
+        return { error: fetchError.message };
+      }
+      
       return { 
-        data: data.employee, 
+        data: mapToUser(data), 
         message: 'Employee updated successfully' 
       };
     } catch (error) {
@@ -133,17 +202,21 @@ export const employeeService = {
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/employees/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      // Delete from users table
+      const { error: userDeleteError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id);
+        
+      if (userDeleteError) {
+        return { error: userDeleteError.message || 'Failed to delete employee records' };
+      }
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to delete employee' };
+      // Delete the auth user
+      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(id);
+      
+      if (authDeleteError) {
+        return { error: authDeleteError.message || 'Failed to delete employee authentication' };
       }
       
       return { message: 'Employee deleted successfully' };
@@ -155,26 +228,23 @@ export const employeeService = {
   
   // Get employees by department
   getEmployeesByDepartment: async (department: string): Promise<ApiResponse<User[]>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
     
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_URL}/employees/department/${department}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to fetch employees' };
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('department', department)
+        .eq('role', 'employee');
+        
+      if (error) {
+        return { error: error.message || 'Failed to fetch employees by department' };
       }
       
-      const data = await response.json();
-      return { data: data.employees };
+      const employees = data.map(mapToUser);
+      return { data: employees };
     } catch (error) {
       console.error('Error fetching employees by department:', error);
       return { error: 'Network error when fetching employees' };
@@ -183,30 +253,47 @@ export const employeeService = {
   
   // Upload employee profile photo
   uploadProfilePhoto: async (employeeId: string, photoData: File): Promise<ApiResponse<{photoUrl: string}>> => {
-    if (!authService.isAuthenticated()) {
+    if (!await authService.isAuthenticated()) {
       return { error: 'Not authenticated' };
     }
     
     try {
-      const token = authService.getToken();
-      const formData = new FormData();
-      formData.append('photo', photoData);
+      const fileExt = photoData.name.split('.').pop();
+      const fileName = `${employeeId}-${Date.now()}.${fileExt}`;
+      const filePath = `employees/${fileName}`;
       
-      const response = await fetch(`${API_URL}/employees/${employeeId}/photo`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        return { error: errorData.message || 'Failed to upload profile photo' };
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase
+        .storage
+        .from('profile-photos')
+        .upload(filePath, photoData);
+        
+      if (uploadError) {
+        return { error: uploadError.message || 'Failed to upload profile photo' };
       }
       
-      const data = await response.json();
-      return { data: data, message: 'Profile photo uploaded successfully' };
+      // Get the public URL
+      const { data } = supabase
+        .storage
+        .from('profile-photos')
+        .getPublicUrl(filePath);
+        
+      const photoUrl = data.publicUrl;
+      
+      // Update user with photo URL
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: photoUrl })
+        .eq('id', employeeId);
+        
+      if (updateError) {
+        return { error: updateError.message || 'Failed to update profile with photo' };
+      }
+      
+      return { 
+        data: { photoUrl }, 
+        message: 'Profile photo uploaded successfully' 
+      };
     } catch (error) {
       console.error('Error uploading profile photo:', error);
       return { error: 'Network error when uploading profile photo' };
