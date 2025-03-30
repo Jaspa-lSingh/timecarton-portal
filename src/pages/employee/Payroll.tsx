@@ -150,6 +150,29 @@ const EmployeePayroll: React.FC = () => {
   const latestPaycheck = getLatestPaycheck();
   const latestPayPeriod = latestPaycheck ? getPayPeriodById(latestPaycheck.payPeriodId) : null;
 
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), 'MMM dd, yyyy');
+  };
+
+  // Get status badge styling
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'approved':
+        return 'bg-blue-100 text-blue-800';
+      case 'paid':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Helper to get pay period by ID
+  const getPayPeriodById = (periodId: string): PayPeriod | undefined => {
+    return payPeriods.find(period => period.id === periodId);
+  };
+
   return (
     <EmployeeLayout>
       <div className="p-6">
@@ -212,7 +235,7 @@ const EmployeePayroll: React.FC = () => {
                   <SelectValue placeholder="Select pay period" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Pay Periods</SelectItem>
+                  <SelectItem value="all">All Pay Periods</SelectItem>
                   {payPeriods.map(period => (
                     <SelectItem key={period.id} value={period.id}>
                       {formatDate(period.startDate)} - {formatDate(period.endDate)}
@@ -228,7 +251,7 @@ const EmployeePayroll: React.FC = () => {
               <div className="flex justify-center py-10">
                 <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
               </div>
-            ) : (selectedPayPeriod ? periodPayrollRecords : payrollRecords).length === 0 ? (
+            ) : (selectedPayPeriod && selectedPayPeriod !== "all" ? periodPayrollRecords : payrollRecords).length === 0 ? (
               <div className="text-center py-10">
                 <FileText className="h-12 w-12 mx-auto text-gray-300 mb-2" />
                 <p className="text-gray-500">No payroll records found</p>
@@ -249,7 +272,7 @@ const EmployeePayroll: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(selectedPayPeriod ? periodPayrollRecords : payrollRecords).map(record => {
+                    {(selectedPayPeriod && selectedPayPeriod !== "all" ? periodPayrollRecords : payrollRecords).map(record => {
                       const payPeriod = getPayPeriodById(record.payPeriodId);
                       
                       return (
@@ -299,7 +322,7 @@ const EmployeePayroll: React.FC = () => {
           {/* Pagination (placeholder) */}
           <CardFooter className="flex items-center justify-between border-t px-6 py-4">
             <div className="text-sm text-gray-500">
-              Showing {(selectedPayPeriod ? periodPayrollRecords : payrollRecords).length} records
+              Showing {(selectedPayPeriod && selectedPayPeriod !== "all" ? periodPayrollRecords : payrollRecords).length} records
             </div>
             
             <div className="flex space-x-2">

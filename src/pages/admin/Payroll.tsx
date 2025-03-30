@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, addDays } from 'date-fns';
@@ -62,7 +61,6 @@ const AdminPayroll: React.FC = () => {
   });
   const [openPeriodDetails, setOpenPeriodDetails] = useState<string[]>([]);
 
-  // Fetch pay periods
   const { 
     data: payPeriods = [], 
     isLoading: isLoadingPeriods 
@@ -75,7 +73,6 @@ const AdminPayroll: React.FC = () => {
     },
   });
 
-  // Fetch employees for reference
   const { 
     data: employees = []
   } = useQuery({
@@ -87,7 +84,6 @@ const AdminPayroll: React.FC = () => {
     },
   });
 
-  // Fetch payroll records by period
   const { 
     data: payrollRecords = [],
     isLoading: isLoadingRecords,
@@ -104,7 +100,6 @@ const AdminPayroll: React.FC = () => {
     enabled: !!selectedPayPeriod,
   });
 
-  // Create new pay period mutation
   const createPayPeriodMutation = useMutation({
     mutationFn: async (periodData: Partial<PayPeriod>) => {
       const response = await payrollService.createPayPeriod(periodData);
@@ -129,7 +124,6 @@ const AdminPayroll: React.FC = () => {
     },
   });
 
-  // Process payroll mutation
   const processPayrollMutation = useMutation({
     mutationFn: async (periodId: string) => {
       const response = await payrollService.processPayroll(periodId);
@@ -144,7 +138,6 @@ const AdminPayroll: React.FC = () => {
         description: 'Payroll processing has been initiated',
       });
       
-      // Refetch records for the current pay period
       if (selectedPayPeriod) {
         refetchRecords();
       }
@@ -158,7 +151,6 @@ const AdminPayroll: React.FC = () => {
     },
   });
 
-  // Approve payroll records mutation
   const approvePayrollMutation = useMutation({
     mutationFn: async (recordIds: string[]) => {
       const response = await payrollService.approvePayroll(recordIds);
@@ -172,7 +164,6 @@ const AdminPayroll: React.FC = () => {
         description: 'Payroll records approved successfully',
       });
       
-      // Refetch records for the current pay period
       if (selectedPayPeriod) {
         refetchRecords();
       }
@@ -237,7 +228,6 @@ const AdminPayroll: React.FC = () => {
         : [...prevOpen, periodId]
     );
     
-    // Set the selected pay period for records
     setSelectedPayPeriod(periodId);
   };
 
@@ -267,17 +257,14 @@ const AdminPayroll: React.FC = () => {
     }
   };
 
-  // Calculate total payroll amount for a period
   const calculatePeriodTotal = (records: PayrollRecord[]) => {
     return records.reduce((total, record) => total + record.grossPay, 0);
   };
 
-  // Check if all records in a period are approved or paid
   const areAllRecordsProcessed = (records: PayrollRecord[]) => {
     return records.every(record => record.status === 'approved' || record.status === 'paid');
   };
 
-  // Count of pending records
   const pendingRecordsCount = payrollRecords.filter(record => record.status === 'pending').length;
 
   return (
@@ -358,7 +345,6 @@ const AdminPayroll: React.FC = () => {
           </Dialog>
         </div>
 
-        {/* Pay Periods */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="md:col-span-3">
             <CardHeader>
@@ -453,7 +439,6 @@ const AdminPayroll: React.FC = () => {
                             </div>
                           </div>
                           
-                          {/* Payroll Records */}
                           {isLoadingRecords ? (
                             <div className="flex justify-center py-10">
                               <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
