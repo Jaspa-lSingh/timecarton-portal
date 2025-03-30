@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '@/services';
+import { authService, employeeService } from '@/services';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -13,10 +14,14 @@ import UserDetailsFields from './forms/UserDetailsFields';
 import PasswordFields from './forms/PasswordFields';
 import RoleSelector from './forms/RoleSelector';
 import AdditionalInfoFields from './forms/AdditionalInfoFields';
+import AddressFields from './forms/AddressFields';
+import DepartmentField from './forms/DepartmentField';
+import ProfilePhotoUpload from './forms/ProfilePhotoUpload';
 
 const RegisterForm: React.FC<{ adminCreated?: boolean }> = ({ adminCreated = false }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -26,10 +31,19 @@ const RegisterForm: React.FC<{ adminCreated?: boolean }> = ({ adminCreated = fal
       confirmPassword: '',
       firstName: '',
       lastName: '',
-      role: adminCreated ? 'employee' : 'admin', // Default based on context
+      role: adminCreated ? 'employee' : 'admin',
       position: '',
       hourlyRate: undefined,
       phoneNumber: '',
+      employeeId: '',
+      department: '',
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        country: '',
+        zipCode: '',
+      }
     },
   });
 
@@ -48,6 +62,19 @@ const RegisterForm: React.FC<{ adminCreated?: boolean }> = ({ adminCreated = fal
           variant: 'destructive'
         });
       } else {
+        // If we have a photo file and the user was created successfully, upload the photo
+        if (photoFile && result.data?.id) {
+          const photoResult = await employeeService.uploadProfilePhoto(result.data.id, photoFile);
+          
+          if (photoResult.error) {
+            toast({
+              title: 'Profile Photo Upload Failed',
+              description: photoResult.error,
+              variant: 'destructive'
+            });
+          }
+        }
+        
         toast({
           title: 'Registration Successful',
           description: result.message || 'Account created successfully!'
@@ -56,6 +83,7 @@ const RegisterForm: React.FC<{ adminCreated?: boolean }> = ({ adminCreated = fal
         // If admin is creating an employee, stay on the page
         if (adminCreated) {
           form.reset();
+          setPhotoFile(null);
         } else {
           // Otherwise redirect to login
           navigate('/login');
@@ -95,6 +123,9 @@ const RegisterForm: React.FC<{ adminCreated?: boolean }> = ({ adminCreated = fal
             <Separator className="my-4" />
             
             <AdditionalInfoFields form={form} />
+            <DepartmentField form={form} />
+            <AddressFields form={form} />
+            <ProfilePhotoUpload onFileSelected={setPhotoFile} />
             
             <Button 
               type="submit" 

@@ -10,12 +10,14 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRole?: 'admin' | 'employee' | 'any';
   requiredPermission?: string;
+  requiredDepartment?: string;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   allowedRole = 'any',
-  requiredPermission
+  requiredPermission,
+  requiredDepartment
 }) => {
   const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
@@ -29,7 +31,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       const currentUser = authService.getCurrentUser();
       
       console.log(`Route access: ${location.pathname} by user:`, currentUser);
-      console.log(`Required role: ${allowedRole}, permission: ${requiredPermission}`);
+      console.log(`Required role: ${allowedRole}, permission: ${requiredPermission}, department: ${requiredDepartment}`);
       
       // Not authenticated, redirect to login
       if (!isAuthenticated) {
@@ -90,13 +92,31 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return;
       }
       
+      // Check department-specific access if required
+      if (requiredDepartment && currentUser.department !== requiredDepartment) {
+        toast({
+          title: "Department Access Denied",
+          description: `You need to be in the ${requiredDepartment} department to access this page`,
+          variant: "destructive"
+        });
+        
+        // Redirect based on role
+        if (currentUser.role === 'admin') {
+          setRedirectTo('/admin/dashboard');
+        } else {
+          setRedirectTo('/employee/dashboard');
+        }
+        setIsChecking(false);
+        return;
+      }
+      
       // All checks passed
       setIsAllowed(true);
       setIsChecking(false);
     };
     
     checkAuth();
-  }, [location.pathname, allowedRole, requiredPermission]);
+  }, [location.pathname, allowedRole, requiredPermission, requiredDepartment]);
   
   if (isChecking) {
     return (
