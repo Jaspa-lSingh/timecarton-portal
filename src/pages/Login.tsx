@@ -90,6 +90,12 @@ const Login: React.FC = () => {
           >
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Log In</h2>
             <LoginForm />
+            
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-500">
+                Only admin-created accounts can log in. Contact your administrator if you need access.
+              </p>
+            </div>
           </motion.div>
           
           <div className="mt-8 text-center text-sm text-gray-500">

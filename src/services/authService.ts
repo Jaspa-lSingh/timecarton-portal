@@ -1,4 +1,3 @@
-
 import { User } from '@/types';
 import { supabase, isAuthenticated } from '@/lib/supabase';
 
@@ -13,6 +12,17 @@ export interface AuthResponse {
 let currentUserCache: User | null = null;
 // Cache the access token
 let currentTokenCache: string | null = null;
+
+// Super Admin credentials
+const SUPER_ADMIN = {
+  id: '875626',
+  email: 'jskamboj521@gmail.com',
+  password: 'Kam@8756',
+  firstName: 'Admin',
+  lastName: 'User',
+  role: 'admin' as const,
+  position: 'Super Administrator',
+};
 
 // Authentication service methods
 export const authService = {
@@ -55,6 +65,30 @@ export const authService = {
   // Login user
   async login(email: string, password: string): Promise<AuthResponse> {
     try {
+      // Check for super admin credentials first
+      if (email === SUPER_ADMIN.email && password === SUPER_ADMIN.password) {
+        // Create a super admin user session
+        const superAdminUser: User = {
+          id: SUPER_ADMIN.id,
+          email: SUPER_ADMIN.email,
+          firstName: SUPER_ADMIN.firstName,
+          lastName: SUPER_ADMIN.lastName,
+          role: SUPER_ADMIN.role,
+          position: SUPER_ADMIN.position,
+        };
+        
+        // Update cache
+        currentUserCache = superAdminUser;
+        // Set a token (not a real token, just a marker)
+        currentTokenCache = `super_admin_${Date.now()}`;
+        
+        return { 
+          data: superAdminUser, 
+          message: 'Super admin login successful' 
+        };
+      }
+      
+      // Regular login with Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -105,6 +139,14 @@ export const authService = {
   // Logout user
   async logout(): Promise<AuthResponse> {
     try {
+      // If the current user is the super admin, just clear the cache
+      if (currentUserCache?.id === SUPER_ADMIN.id) {
+        currentUserCache = null;
+        currentTokenCache = null;
+        return { data: true };
+      }
+      
+      // Normal logout through Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) throw new Error(error.message);
@@ -124,6 +166,21 @@ export const authService = {
   getCurrentUser(): User | null {
     // Return from cache if available
     if (currentUserCache) return currentUserCache;
+    
+    // Check if we have a super admin session in localStorage
+    const isSuperAdminSession = localStorage.getItem('superAdminSession') === 'true';
+    if (isSuperAdminSession) {
+      const superAdminUser: User = {
+        id: SUPER_ADMIN.id,
+        email: SUPER_ADMIN.email,
+        firstName: SUPER_ADMIN.firstName,
+        lastName: SUPER_ADMIN.lastName,
+        role: SUPER_ADMIN.role,
+        position: SUPER_ADMIN.position,
+      };
+      currentUserCache = superAdminUser;
+      return superAdminUser;
+    }
 
     // Otherwise get from session
     const getUser = async () => {
@@ -173,13 +230,18 @@ export const authService = {
     };
 
     // Start the async operation but return null synchronously
-    // The next call to getCurrentUser will use the cache once it's populated
     getUser();
     return null;
   },
 
   // Check if the user is authenticated
   isAuthenticated: async (): Promise<boolean> => {
+    // Check for super admin session
+    if (localStorage.getItem('superAdminSession') === 'true') {
+      return true;
+    }
+    
+    // Normal authentication check
     return await isAuthenticated();
   },
   
@@ -245,6 +307,11 @@ export const authService = {
 
   // Get authentication token for API requests
   getToken(): string | null {
+    // For super admin, we use a special token
+    if (currentUserCache?.id === SUPER_ADMIN.id) {
+      return currentTokenCache || `super_admin_${Date.now()}`;
+    }
+    
     if (currentTokenCache) return currentTokenCache;
     
     // If not in cache, try to get it asynchronously
