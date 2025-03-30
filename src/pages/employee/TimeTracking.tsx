@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, isToday, isYesterday, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { timeEntryService } from '@/services/timeEntryService';
@@ -17,7 +18,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Filter
+  Filter,
+  Camera,
+  MapPin
 } from 'lucide-react';
 import {
   Table,
@@ -41,6 +44,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter
+} from '@/components/ui/sheet';
 
 const TimeTracking: React.FC = () => {
   const currentUser = authService.getCurrentUser();
@@ -50,6 +61,13 @@ const TimeTracking: React.FC = () => {
   const [endDate, setEndDate] = useState<string>(format(endOfWeek(new Date()), 'yyyy-MM-dd'));
   const [notes, setNotes] = useState<string>('');
   const [openNotes, setOpenNotes] = useState<boolean>(false);
+  const [showCamera, setShowCamera] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [photoData, setPhotoData] = useState<string>('');
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationError, setLocationError] = useState<string>('');
+  const [isGettingLocation, setIsGettingLocation] = useState<boolean>(false);
 
   useEffect(() => {
     // Set date range based on selection
@@ -109,10 +127,10 @@ const TimeTracking: React.FC = () => {
 
   // Clock in mutation
   const clockInMutation = useMutation({
-    mutationFn: async (noteText: string) => {
+    mutationFn: async ({ photoData, location, noteText }: { photoData: string, location: { lat: number, lng: number }, noteText: string }) => {
       if (!currentUser) throw new Error('No user found');
       
-      const response = await timeEntryService.clockIn(currentUser.id, noteText);
+      const response = await timeEntryService.clockIn(currentUser.id, photoData, location, noteText);
       if (response.error) throw new Error(response.error);
       return response.data;
     },
@@ -125,6 +143,8 @@ const TimeTracking: React.FC = () => {
       refetch();
       setNotes('');
       setOpenNotes(false);
+      setShowCamera(false);
+      setPhotoData('');
     },
     onError: (error: Error) => {
       toast({
@@ -137,12 +157,12 @@ const TimeTracking: React.FC = () => {
 
   // Clock out mutation
   const clockOutMutation = useMutation({
-    mutationFn: async (noteText: string) => {
+    mutationFn: async ({ photoData, location, noteText }: { photoData: string, location: { lat: number, lng: number }, noteText: string }) => {
       if (!currentUser || !clockStatus?.currentEntry) {
         throw new Error('No active time entry found');
       }
       
-      const response = await timeEntryService.clockOut(clockStatus.currentEntry.id, noteText);
+      const response = await timeEntryService.clockOut(clockStatus.currentEntry.id, photoData, location, noteText);
       if (response.error) throw new Error(response.error);
       return response.data;
     },
@@ -155,6 +175,8 @@ const TimeTracking: React.FC = () => {
       refetch();
       setNotes('');
       setOpenNotes(false);
+      setShowCamera(false);
+      setPhotoData('');
     },
     onError: (error: Error) => {
       toast({
@@ -174,12 +196,130 @@ const TimeTracking: React.FC = () => {
   };
 
   const submitClockAction = () => {
+    if (!photoData) {
+      toast({
+        title: 'Selfie Required',
+        description: 'Please take a selfie to clock in/out',
+        variant: 'destructive',
+      });
+      setShowCamera(true);
+      return;
+    }
+    
+    if (!userLocation) {
+      toast({
+        title: 'Location Required',
+        description: 'Please allow location access to clock in/out',
+        variant: 'destructive',
+      });
+      getLocation();
+      return;
+    }
+    
     if (clockStatus?.isClocked) {
-      clockOutMutation.mutate(notes);
+      clockOutMutation.mutate({ photoData, location: userLocation, noteText: notes });
     } else {
-      clockInMutation.mutate(notes);
+      clockInMutation.mutate({ photoData, location: userLocation, noteText: notes });
     }
   };
+
+  // Initialize camera
+  const startCamera = async () => {
+    try {
+      if (videoRef.current) {
+        const constraints = { video: { facingMode: "user" }, audio: false };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      toast({
+        title: 'Camera Error',
+        description: 'Unable to access camera. Please check your permissions.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Take selfie
+  const takeSelfie = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const data = canvas.toDataURL('image/jpeg');
+        setPhotoData(data);
+        
+        // Stop the camera stream
+        const stream = video.srcObject as MediaStream;
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+        video.srcObject = null;
+      }
+    }
+  };
+
+  // Retake selfie
+  const retakeSelfie = () => {
+    setPhotoData('');
+    startCamera();
+  };
+
+  // Get user location
+  const getLocation = () => {
+    setIsGettingLocation(true);
+    setLocationError('');
+    
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      setIsGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        setLocationError('Unable to retrieve your location');
+        setIsGettingLocation(false);
+        console.error("Error getting location:", error);
+      }
+    );
+  };
+
+  // Effects
+  useEffect(() => {
+    if (showCamera) {
+      startCamera();
+    }
+    
+    // Cleanup camera on component unmount
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+      }
+    };
+  }, [showCamera]);
+
+  useEffect(() => {
+    // Get location when preparing to clock in/out
+    if (openNotes) {
+      getLocation();
+    }
+  }, [openNotes]);
 
   const formatDateTime = (dateString: string) => {
     const date = parseISO(dateString);
@@ -453,10 +593,64 @@ const TimeTracking: React.FC = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
-              {clockStatus?.isClocked ? 'Clock Out' : 'Clock In'} Notes
+              {clockStatus?.isClocked ? 'Clock Out' : 'Clock In'} 
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {!photoData ? (
+              <Button 
+                onClick={() => setShowCamera(true)} 
+                variant="outline" 
+                className="flex items-center gap-2"
+              >
+                <Camera size={16} />
+                Take Selfie
+              </Button>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <div className="border rounded-md overflow-hidden w-64 h-64 mx-auto">
+                  <img src={photoData} alt="Selfie" className="w-full h-full object-cover" />
+                </div>
+                <Button 
+                  onClick={retakeSelfie} 
+                  variant="outline" 
+                  size="sm"
+                >
+                  Retake Selfie
+                </Button>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Location</label>
+              <div className="flex items-center gap-2">
+                {userLocation ? (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <MapPin size={16} />
+                    <span>Location captured</span>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={getLocation} 
+                    variant="outline" 
+                    size="sm" 
+                    disabled={isGettingLocation}
+                    className="flex items-center gap-2"
+                  >
+                    {isGettingLocation ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <MapPin size={16} />
+                    )}
+                    Get Location
+                  </Button>
+                )}
+              </div>
+              {locationError && (
+                <p className="text-sm text-red-500">{locationError}</p>
+              )}
+            </div>
+            
             <div className="space-y-2">
               <label htmlFor="notes" className="text-sm font-medium">
                 Add notes (optional)
@@ -491,6 +685,71 @@ const TimeTracking: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Camera Sheet */}
+      <Sheet open={showCamera} onOpenChange={setShowCamera}>
+        <SheetContent side="bottom" className="h-[80vh] sm:max-w-none">
+          <SheetHeader>
+            <SheetTitle>Take a Selfie</SheetTitle>
+            <SheetDescription>
+              Please look at the camera and take a clear selfie
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex flex-col items-center justify-center py-6">
+            {!photoData ? (
+              <>
+                <div className="relative w-full max-w-sm mx-auto mb-4 overflow-hidden rounded-lg aspect-[3/4]">
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <Button onClick={takeSelfie} className="flex items-center gap-2">
+                  <Camera size={16} />
+                  Take Selfie
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="w-full max-w-sm mx-auto mb-4 overflow-hidden rounded-lg aspect-[3/4]">
+                  <img 
+                    src={photoData} 
+                    alt="Selfie" 
+                    className="w-full h-full object-cover" 
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={retakeSelfie} variant="outline">
+                    Retake
+                  </Button>
+                  <Button onClick={() => setShowCamera(false)}>
+                    Use Photo
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+          <canvas ref={canvasRef} className="hidden" />
+          <SheetFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowCamera(false);
+                // Stop the camera if it's running
+                if (videoRef.current && videoRef.current.srcObject) {
+                  const stream = videoRef.current.srcObject as MediaStream;
+                  const tracks = stream.getTracks();
+                  tracks.forEach(track => track.stop());
+                }
+              }}
+            >
+              Cancel
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </EmployeeLayout>
   );
 };

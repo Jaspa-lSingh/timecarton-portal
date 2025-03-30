@@ -19,7 +19,8 @@ import {
   ClipboardList,
   RefreshCw,
   MessageSquare,
-  Bell
+  Bell,
+  User
 } from 'lucide-react';
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -28,6 +29,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
+  
+  const currentUser = authService.getCurrentUser();
   
   const handleLogout = () => {
     authService.logout();
@@ -81,6 +84,19 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             )}
           </div>
           
+          {/* User avatar and info */}
+          <div className="p-4 border-b">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 font-bold">
+                {currentUser?.firstName?.charAt(0)}{currentUser?.lastName?.charAt(0)}
+              </div>
+              <div>
+                <p className="font-medium">{currentUser?.firstName} {currentUser?.lastName}</p>
+                <p className="text-sm text-gray-500">{currentUser?.position}</p>
+              </div>
+            </div>
+          </div>
+          
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navItems.map((item) => (
               <Link
@@ -121,10 +137,21 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </Button>
             )}
             
-            <div className="flex items-center ml-auto">
-              <div className="hidden md:flex items-center mr-4 text-sm">
-                <span className="font-medium text-gray-700">Admin User</span>
+            <div className="flex items-center gap-4 ml-auto">
+              {/* Notifications */}
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell size={20} />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </Button>
+              
+              {/* User menu */}
+              <div className="hidden md:flex items-center">
+                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <User size={18} />
+                  <span className="font-medium text-gray-700">{currentUser?.firstName} {currentUser?.lastName}</span>
+                </Button>
               </div>
+              
               <Button 
                 variant="outline"
                 size="sm"
