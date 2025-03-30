@@ -15,7 +15,11 @@ export const isAuthenticated = async (): Promise<boolean> => {
     }
     
     // Normal Supabase authentication check
-    const { data } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('Error checking authentication:', error);
+      return false;
+    }
     return !!data.user;
   } catch (error) {
     console.error('Error checking authentication:', error);
