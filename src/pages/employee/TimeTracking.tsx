@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
@@ -93,10 +94,10 @@ const EmployeeTimeTracking: React.FC = () => {
                   <div key={entry.id} className="border rounded-md p-4">
                     <div className="flex justify-between items-center mb-2">
                       <div className="font-medium">
-                        {formatTime(entry.startTime)} - {formatTime(entry.endTime)}
+                        {formatTime(entry.clockIn)} - {entry.clockOut ? formatTime(entry.clockOut) : 'Not clocked out'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        Duration: {calculateDuration(entry.startTime, entry.endTime)} hours
+                        {entry.clockOut ? `Duration: ${calculateDuration(entry.clockIn, entry.clockOut)} hours` : 'Ongoing'}
                       </div>
                     </div>
                     <div className="text-sm text-gray-500">
