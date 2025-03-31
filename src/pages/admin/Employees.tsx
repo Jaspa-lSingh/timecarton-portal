@@ -5,10 +5,11 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { User } from '@/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import EmployeeTable from '@/components/employees/EmployeeTable';
 import EmployeeSearch from '@/components/employees/EmployeeSearch';
 import EmployeeActions from '@/components/employees/EmployeeActions';
+import { Button } from '@/components/ui/button';
 
 const EmployeesPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -23,24 +24,33 @@ const EmployeesPage: React.FC = () => {
     console.log('EmployeesPage mounted, querying employees');
   }, []);
 
-  // Fetch employees data
   const {
     data: employees = [],
     isLoading,
     error,
-    refetch
+    refetch,
+    isRefetching
   } = useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
       console.log('Executing employee query function');
       const response = await employeeService.getEmployees();
       console.log('Employee query response:', response);
-      if (response.error) throw new Error(response.error);
-      return response.data || [];
+      
+      if (response.error) {
+        console.error('Error in query function:', response.error);
+        throw new Error(response.error);
+      }
+      
+      if (!response.data) {
+        console.warn('No data returned from query function');
+        return [];
+      }
+      
+      return response.data;
     },
   });
 
-  // Update employee mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => {
       const response = await employeeService.updateEmployee(id, data);
@@ -50,7 +60,6 @@ const EmployeesPage: React.FC = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       
-      // Upload photo if provided
       if (photoFile && data?.id) {
         uploadPhotoMutation.mutate({ id: data.id, file: photoFile });
       } else {
@@ -67,7 +76,6 @@ const EmployeesPage: React.FC = () => {
     },
   });
 
-  // Upload photo mutation
   const uploadPhotoMutation = useMutation({
     mutationFn: async ({ id, file }: { id: string; file: File }) => {
       const response = await employeeService.uploadProfilePhoto(id, file);
@@ -85,12 +93,10 @@ const EmployeesPage: React.FC = () => {
         description: error.message,
         variant: 'destructive',
       });
-      // We still close the form since the employee was updated
       resetForm();
     },
   });
 
-  // Delete employee mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await employeeService.deleteEmployee(id);
@@ -141,15 +147,21 @@ const EmployeesPage: React.FC = () => {
     }
   };
 
+  const handleRefresh = () => {
+    refetch();
+  };
+
   const filteredEmployees = employees.filter((employee) => {
+    if (!employee) return false;
+    
     const searchTerm = searchQuery.toLowerCase();
     return (
-      employee.firstName.toLowerCase().includes(searchTerm) ||
-      employee.lastName.toLowerCase().includes(searchTerm) ||
-      employee.email.toLowerCase().includes(searchTerm) ||
-      employee.position?.toLowerCase().includes(searchTerm) ||
-      employee.employeeId?.toLowerCase().includes(searchTerm) ||
-      employee.department?.toLowerCase().includes(searchTerm)
+      employee.firstName?.toLowerCase()?.includes(searchTerm) ||
+      employee.lastName?.toLowerCase()?.includes(searchTerm) ||
+      employee.email?.toLowerCase()?.includes(searchTerm) ||
+      employee.position?.toLowerCase()?.includes(searchTerm) ||
+      employee.employeeId?.toLowerCase()?.includes(searchTerm) ||
+      employee.department?.toLowerCase()?.includes(searchTerm)
     );
   });
 
@@ -158,7 +170,11 @@ const EmployeesPage: React.FC = () => {
       <AdminLayout>
         <div className="p-6">
           <div className="text-center py-10 text-red-500">
-            Error loading employees. Please try again.
+            <h2 className="text-xl font-bold mb-2">Error loading employees</h2>
+            <p className="mb-4">{error instanceof Error ? error.message : 'Unknown error'}</p>
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="w-4 h-4 mr-2" /> Try Again
+            </Button>
           </div>
         </div>
       </AdminLayout>
@@ -174,18 +190,30 @@ const EmployeesPage: React.FC = () => {
             <p className="text-gray-500">Manage your organization's employees</p>
           </div>
           
-          <EmployeeActions 
-            isDialogOpen={openDialog}
-            setDialogOpen={setOpenDialog}
-            isEditMode={isEditMode}
-            currentEmployee={currentEmployee}
-            onSubmit={handleSubmit}
-            onCancel={resetForm}
-            isSubmitting={updateMutation.isPending}
-            isUploading={uploadPhotoMutation.isPending}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh} 
+              disabled={isRefetching}
+              className="mr-2"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            
+            <EmployeeActions 
+              isDialogOpen={openDialog}
+              setDialogOpen={setOpenDialog}
+              isEditMode={isEditMode}
+              currentEmployee={currentEmployee}
+              onSubmit={handleSubmit}
+              onCancel={resetForm}
+              isSubmitting={updateMutation.isPending}
+              isUploading={uploadPhotoMutation.isPending}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+            />
+          </div>
         </div>
 
         <Card className="mb-6">
@@ -197,7 +225,7 @@ const EmployeesPage: React.FC = () => {
               />
             </div>
 
-            {isLoading ? (
+            {isLoading || isRefetching ? (
               <div className="flex justify-center items-center py-10">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
               </div>
@@ -208,6 +236,13 @@ const EmployeesPage: React.FC = () => {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
+            )}
+            
+            {employees.length === 0 && !isLoading && (
+              <div className="text-center py-10 text-gray-500">
+                <p className="mb-2">No employees found</p>
+                <p className="text-sm">Try adding employees using the "Add Employee" button above</p>
+              </div>
             )}
           </CardContent>
         </Card>

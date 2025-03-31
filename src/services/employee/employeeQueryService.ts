@@ -9,6 +9,8 @@ export const employeeQueryService = {
   getEmployees: async (): Promise<ApiResponse<User[]>> => {
     try {
       console.log('Fetching employees from Supabase');
+      
+      // Make sure we're getting all fields
       const { data, error } = await supabase
         .from('users')
         .select('*');
@@ -19,7 +21,17 @@ export const employeeQueryService = {
       }
       
       console.log('Employees fetched:', data);
-      return { data: transformUsers(data || []) };
+      
+      // Check if we have data and it's an array
+      if (!data || !Array.isArray(data)) {
+        console.warn('No employees found or invalid data format');
+        return { data: [] };
+      }
+      
+      const transformedUsers = transformUsers(data);
+      console.log('Transformed users:', transformedUsers);
+      
+      return { data: transformedUsers };
     } catch (error) {
       console.error('Error fetching employees:', error);
       return { error: 'Network error when fetching employees' };
