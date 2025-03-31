@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { payrollService } from '@/services/payrollService';
-import { authService } from '@/services/authService';
+import { authService } from '@/services';
 import EmployeeLayout from '@/components/layouts/EmployeeLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

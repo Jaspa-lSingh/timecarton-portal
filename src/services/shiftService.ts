@@ -1,7 +1,6 @@
-
 import { Shift, ApiResponse, ShiftChangeRequest, ShiftCoverRequest } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { authService } from './authService';
+import { authService } from '@/services';
 
 // Shift service
 export const shiftService = {
@@ -486,6 +485,3 @@ function transformShiftChangeRequest(request: any): ShiftChangeRequest {
 function transformShiftChangeRequests(requests: any[]): ShiftChangeRequest[] {
   return requests.map(transformShiftChangeRequest);
 }
-
-// ShiftCoverRequest methods are removed as they're not used in the current schema
-// If you need them, you can implement them similarly to the ShiftChangeRequest methods

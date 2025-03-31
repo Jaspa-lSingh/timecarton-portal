@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { format, isToday, isSameDay, parseISO, addWeeks, subWeeks, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import EmployeeLayout from '@/components/layouts/EmployeeLayout';
+import { Button } from '@/components/ui/button';
 import { shiftService } from '@/services/shiftService';
-import { authService } from '@/services/authService';
+import { authService } from '@/services';
 import { Shift } from '@/types';
-import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
 
 const EmployeeSchedule: React.FC = () => {
   const [shifts, setShifts] = useState<Shift[]>([]);
@@ -286,7 +286,7 @@ const EmployeeSchedule: React.FC = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Calendar className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                <CalendarIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
                 <p className="text-gray-500">No upcoming shifts scheduled</p>
               </div>
             )}
