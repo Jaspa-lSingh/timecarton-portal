@@ -9,7 +9,7 @@ import EmploymentFields from './form/EmploymentFields';
 import AddressFields from './form/AddressFields';
 import PhotoUpload from './form/PhotoUpload';
 import FormActions from './form/FormActions';
-import { employeeSchema, EmployeeFormProps } from './types';
+import { employeeSchema, EmployeeFormProps, EmployeeFormValues } from './types';
 
 const EmployeeForm: React.FC<EmployeeFormProps> = ({
   employee,
@@ -20,7 +20,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
 }) => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
-  const form = useForm({
+  const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
       firstName: employee.firstName || '',
@@ -54,7 +54,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
     setPhotoFile(file);
   };
 
-  const handleFormSubmit = (values: any) => {
+  const handleFormSubmit = (values: EmployeeFormValues) => {
     onSubmit(values);
     // The parent will handle the photo upload
   };

@@ -3,7 +3,6 @@ import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { EmployeeFormValues } from '@/components/employees/types';
 
 interface DepartmentFieldProps {
   form: UseFormReturn<any>;  // Using 'any' to support both RegisterFormValues and EmployeeFormValues

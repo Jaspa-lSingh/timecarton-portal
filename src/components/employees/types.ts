@@ -20,7 +20,23 @@ export const employeeSchema = z.object({
   }).optional(),
 });
 
-export type EmployeeFormValues = z.infer<typeof employeeSchema>;
+export type EmployeeFormValues = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  position: string;
+  employeeId: string;
+  department: string;
+  hourlyRate?: number;
+  phoneNumber: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+  };
+};
 
 export interface EmployeeFormProps {
   employee: Partial<User>;
