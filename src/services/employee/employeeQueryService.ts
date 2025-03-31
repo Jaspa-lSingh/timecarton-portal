@@ -9,6 +9,21 @@ export const employeeQueryService = {
   getEmployees: async (): Promise<ApiResponse<User[]>> => {
     try {
       console.log('Fetching employees from Supabase');
+
+      // Check if user is authenticated and has admin privileges
+      const isAuthenticated = await authService.isAuthenticated();
+      const isAdmin = authService.isAdmin();
+      console.log('Auth status:', { isAuthenticated, isAdmin });
+      
+      if (!isAuthenticated) {
+        console.error('User is not authenticated');
+        return { error: 'Authentication required' };
+      }
+      
+      if (!isAdmin) {
+        console.error('User does not have admin privileges');
+        return { error: 'Admin privileges required' };
+      }
       
       // Make sure we're getting all fields
       const { data, error } = await supabase
@@ -20,16 +35,24 @@ export const employeeQueryService = {
         return { error: error.message };
       }
       
-      console.log('Employees fetched:', data);
+      console.log('Employees data returned from Supabase:', data);
       
       // Check if we have data and it's an array
-      if (!data || !Array.isArray(data)) {
-        console.warn('No employees found or invalid data format');
+      if (!data) {
+        console.warn('No employees found or data is null');
         return { data: [] };
       }
       
+      if (!Array.isArray(data)) {
+        console.warn('Data returned is not an array:', data);
+        return { data: [] };
+      }
+      
+      console.log('Number of employees fetched:', data.length);
+      
       const transformedUsers = transformUsers(data);
       console.log('Transformed users:', transformedUsers);
+      console.log('Number of transformed users:', transformedUsers.length);
       
       return { data: transformedUsers };
     } catch (error) {

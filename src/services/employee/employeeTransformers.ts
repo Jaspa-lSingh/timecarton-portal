@@ -9,7 +9,14 @@ export function transformUser(user: any): User | null {
   }
   
   try {
-    return {
+    console.log('Transforming user:', user);
+    
+    // Check for required fields
+    if (!user.id) {
+      console.error('User is missing ID field:', user);
+    }
+    
+    const transformedUser: User = {
       id: user.id || '',
       email: user.email || '',
       firstName: user.first_name || '',
@@ -29,6 +36,8 @@ export function transformUser(user: any): User | null {
         zipCode: user.zip_code || ''
       }
     };
+    
+    return transformedUser;
   } catch (error) {
     console.error('Error transforming user:', error, user);
     return null;
@@ -42,9 +51,19 @@ export function transformUsers(users: any[]): User[] {
     return [];
   }
   
+  console.log('Transforming users array of length:', users.length);
+  
   const transformed = users
-    .map(transformUser)
+    .map((user, index) => {
+      const result = transformUser(user);
+      if (!result) {
+        console.error(`Failed to transform user at index ${index}:`, user);
+      }
+      return result;
+    })
     .filter((user): user is User => user !== null);
+  
+  console.log('Number of successfully transformed users:', transformed.length);
   
   return transformed;
 }

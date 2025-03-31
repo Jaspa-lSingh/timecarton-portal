@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { employeeService } from '@/services/employeeService';
@@ -5,7 +6,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { User } from '@/types';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import EmployeeTable from '@/components/employees/EmployeeTable';
 import EmployeeSearch from '@/components/employees/EmployeeSearch';
 import EmployeeActions from '@/components/employees/EmployeeActions';
@@ -39,6 +40,11 @@ const EmployeesPage: React.FC = () => {
       
       if (response.error) {
         console.error('Error in query function:', response.error);
+        toast({
+          title: 'Error loading employees',
+          description: response.error,
+          variant: 'destructive'
+        });
         throw new Error(response.error);
       }
       
@@ -169,10 +175,21 @@ const EmployeesPage: React.FC = () => {
     return (
       <AdminLayout>
         <div className="p-6">
-          <div className="text-center py-10 text-red-500">
-            <h2 className="text-xl font-bold mb-2">Error loading employees</h2>
-            <p className="mb-4">{error instanceof Error ? error.message : 'Unknown error'}</p>
-            <Button onClick={handleRefresh} variant="outline">
+          <div className="text-center py-10">
+            <div className="flex flex-col items-center justify-center text-red-500 space-y-2">
+              <AlertCircle className="h-10 w-10" />
+              <h2 className="text-xl font-bold mb-2">Error loading employees</h2>
+              <p className="mb-4">{error instanceof Error ? error.message : 'Unknown error'}</p>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-md mt-4 max-w-md mx-auto">
+              <h3 className="font-medium text-amber-700 mb-2">Troubleshooting steps:</h3>
+              <ol className="text-sm text-amber-600 list-decimal pl-5 space-y-1 text-left">
+                <li>Check that your Supabase database has the users table properly set up</li>
+                <li>Verify that Row Level Security (RLS) policies allow you to view all users</li>
+                <li>Confirm you're properly authenticated with admin privileges</li>
+              </ol>
+            </div>
+            <Button onClick={handleRefresh} variant="outline" className="mt-6">
               <RefreshCw className="w-4 h-4 mr-2" /> Try Again
             </Button>
           </div>
@@ -238,10 +255,18 @@ const EmployeesPage: React.FC = () => {
               />
             )}
             
-            {employees.length === 0 && !isLoading && (
+            {employees.length === 0 && !isLoading && !isRefetching && (
               <div className="text-center py-10 text-gray-500">
-                <p className="mb-2">No employees found</p>
-                <p className="text-sm">Try adding employees using the "Add Employee" button above</p>
+                <p className="mb-2 text-lg">No employees found</p>
+                <p className="text-sm mb-6">Try adding employees using the "Add Employee" button above</p>
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-md inline-block text-left">
+                  <h3 className="font-medium text-blue-700 mb-2">Debugging Information:</h3>
+                  <ul className="text-sm text-blue-600 list-disc pl-5 space-y-1">
+                    <li>Check that you're logged in as an admin user</li>
+                    <li>Verify Supabase database connectivity</li>
+                    <li>Inspect browser console for error messages</li>
+                  </ul>
+                </div>
               </div>
             )}
           </CardContent>
