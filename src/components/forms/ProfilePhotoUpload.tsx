@@ -3,32 +3,51 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Loader2 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface ProfilePhotoUploadProps {
   onFileSelected: (file: File | null) => void;
+  currentPhotoUrl?: string;
 }
 
-const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({ onFileSelected }) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({ 
+  onFileSelected,
+  currentPhotoUrl = null
+}) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(currentPhotoUrl);
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsLoading(true);
+    
     const file = e.target.files?.[0];
     if (!file) {
       onFileSelected(null);
       setPreviewUrl(null);
+      setIsLoading(false);
       return;
     }
     
     // Check if file is an image
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file (JPEG, PNG, etc.)');
+      toast({
+        title: 'Invalid file type',
+        description: 'Please select an image file (JPEG, PNG, etc.)',
+        variant: 'destructive'
+      });
+      setIsLoading(false);
       return;
     }
     
     // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size exceeds 5MB. Please select a smaller file.');
+      toast({
+        title: 'File too large',
+        description: 'File size exceeds 5MB. Please select a smaller file.',
+        variant: 'destructive'
+      });
+      setIsLoading(false);
       return;
     }
     
@@ -36,6 +55,7 @@ const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({ onFileSelected 
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
     onFileSelected(file);
+    setIsLoading(false);
     
     return () => {
       URL.revokeObjectURL(objectUrl);
@@ -82,8 +102,15 @@ const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({ onFileSelected 
           />
           <Label htmlFor="profile-photo" className="cursor-pointer">
             <div className="flex items-center gap-2">
-              <Button type="button" size="sm" variant="outline">
-                {previewUrl ? 'Change Photo' : 'Upload Photo'}
+              <Button type="button" size="sm" variant="outline" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 size={16} className="mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  previewUrl ? 'Change Photo' : 'Upload Photo'
+                )}
               </Button>
               <span className="text-sm text-gray-500">
                 Max size: 5MB

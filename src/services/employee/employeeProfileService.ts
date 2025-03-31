@@ -1,12 +1,12 @@
 
 import { ApiResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { authService } from '@/services/auth';
+import { isAuthenticated } from '@/lib/supabase';
 
 export const employeeProfileService = {
   // Upload profile photo
   uploadProfilePhoto: async (userId: string, file: File): Promise<ApiResponse<string>> => {
-    if (!(await authService.isAuthenticated())) {
+    if (!(await isAuthenticated())) {
       return { error: 'Not authenticated' };
     }
 

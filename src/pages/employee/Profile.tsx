@@ -7,14 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
-import { authService } from '@/services';
+import { authService, employeeService } from '@/services';
 import { User } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ProfilePhotoUpload from '@/components/forms/ProfilePhotoUpload';
 
 const Profile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   
   useEffect(() => {
     // Get current user
@@ -82,6 +85,11 @@ const Profile: React.FC = () => {
           };
         });
         
+        // Upload photo if selected
+        if (photoFile) {
+          await handlePhotoUpload();
+        }
+        
         toast({
           title: 'Profile Updated',
           description: 'Your profile has been updated successfully.'
@@ -98,6 +106,45 @@ const Profile: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const handlePhotoUpload = async () => {
+    if (!user || !photoFile) return;
+    
+    setIsUploadingPhoto(true);
+    try {
+      const result = await employeeService.uploadProfilePhoto(user.id, photoFile);
+      
+      if (result.error) {
+        toast({
+          title: 'Photo Upload Failed',
+          description: result.error,
+          variant: 'destructive'
+        });
+      } else {
+        // Update local user state with new avatar URL
+        setUser(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            avatar: result.data
+          };
+        });
+        
+        toast({
+          title: 'Photo Updated',
+          description: 'Your profile photo has been updated successfully.'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while uploading the photo',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
   
   const handleCancel = () => {
     // Reset form data to current user data
@@ -110,6 +157,7 @@ const Profile: React.FC = () => {
         position: user.position || '',
       });
     }
+    setPhotoFile(null);
     setIsEditing(false);
   };
   
@@ -181,6 +229,13 @@ const Profile: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {isEditing && (
+                <ProfilePhotoUpload 
+                  onFileSelected={setPhotoFile} 
+                  currentPhotoUrl={user.avatar}
+                />
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
@@ -268,8 +323,8 @@ const Profile: React.FC = () => {
                   <Button variant="outline" onClick={handleCancel}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSave} disabled={isLoading}>
-                    {isLoading ? 'Saving...' : 'Save Changes'}
+                  <Button onClick={handleSave} disabled={isLoading || isUploadingPhoto}>
+                    {isLoading || isUploadingPhoto ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </>
               ) : (

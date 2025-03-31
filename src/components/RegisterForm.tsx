@@ -61,15 +61,29 @@ const RegisterForm: React.FC<{ adminCreated?: boolean }> = ({ adminCreated = fal
           description: result.error,
           variant: 'destructive'
         });
+        setIsLoading(false);
       } else {
         // If we have a photo file and the user was created successfully, upload the photo
         if (photoFile && result.data?.id) {
-          const photoResult = await employeeService.uploadProfilePhoto(result.data.id, photoFile);
-          
-          if (photoResult.error) {
+          try {
+            console.log("Uploading photo for user:", result.data.id);
+            const photoResult = await employeeService.uploadProfilePhoto(result.data.id, photoFile);
+            
+            if (photoResult.error) {
+              console.error("Photo upload failed:", photoResult.error);
+              toast({
+                title: 'Profile Photo Upload Failed',
+                description: photoResult.error,
+                variant: 'destructive'
+              });
+            } else {
+              console.log("Photo uploaded successfully:", photoResult.data);
+            }
+          } catch (photoError) {
+            console.error("Error during photo upload:", photoError);
             toast({
-              title: 'Profile Photo Upload Failed',
-              description: photoResult.error,
+              title: 'Profile Photo Upload Error',
+              description: 'An error occurred while uploading the profile photo',
               variant: 'destructive'
             });
           }
@@ -88,14 +102,15 @@ const RegisterForm: React.FC<{ adminCreated?: boolean }> = ({ adminCreated = fal
           // Otherwise redirect to login
           navigate('/login');
         }
+        setIsLoading(false);
       }
     } catch (error) {
+      console.error("Registration error:", error);
       toast({
         title: 'Error',
         description: 'An unexpected error occurred',
         variant: 'destructive'
       });
-    } finally {
       setIsLoading(false);
     }
   };
