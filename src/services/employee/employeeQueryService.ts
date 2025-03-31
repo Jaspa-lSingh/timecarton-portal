@@ -13,6 +13,7 @@ export const employeeQueryService = {
       // Check if user is authenticated and has admin privileges
       const isAuthenticated = await authService.isAuthenticated();
       const isAdmin = authService.isAdmin();
+      const currentUser = authService.getCurrentUser();
       console.log('Auth status:', { isAuthenticated, isAdmin });
       
       if (!isAuthenticated) {
@@ -25,52 +26,65 @@ export const employeeQueryService = {
         return { error: 'Admin privileges required' };
       }
       
-      // First check if auth users exist that need to be synced to the users table
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      // Super admin doesn't need to sync auth users since they're using a different auth mechanism
+      const isSuperAdmin = currentUser?.id === '875626';
       
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
-      } else {
-        console.log('Auth users found:', authUsers?.users?.length || 0);
-        
-        // Check if users exist in the auth system but not in our users table
-        if (authUsers?.users?.length > 0) {
-          // Check existing users in our users table
-          const { data: existingUsers, error: existingError } = await supabase
-            .from('users')
-            .select('id');
-            
-          if (existingError) {
-            console.error('Error fetching existing users:', existingError);
+      // Only attempt to sync auth users if not the super admin (who doesn't have this permission)
+      if (!isSuperAdmin) {
+        try {
+          // First check if auth users exist that need to be synced to the users table
+          const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+          
+          if (authError) {
+            console.error('Error fetching auth users:', authError);
           } else {
-            const existingIds = new Set(existingUsers?.map(user => user.id) || []);
-            const missingUsers = authUsers.users.filter(user => !existingIds.has(user.id));
+            console.log('Auth users found:', authUsers?.users?.length || 0);
             
-            console.log('Missing users to sync:', missingUsers.length);
-            
-            // Sync missing users to our users table
-            if (missingUsers.length > 0) {
-              const usersToInsert = missingUsers.map(user => ({
-                id: user.id,
-                email: user.email || '',
-                first_name: user.user_metadata?.first_name || '',
-                last_name: user.user_metadata?.last_name || '',
-                role: user.user_metadata?.role || 'employee',
-              }));
-              
-              const { data: insertedData, error: insertError } = await supabase
+            // Check if users exist in the auth system but not in our users table
+            if (authUsers?.users?.length > 0) {
+              // Check existing users in our users table
+              const { data: existingUsers, error: existingError } = await supabase
                 .from('users')
-                .insert(usersToInsert)
-                .select();
+                .select('id');
                 
-              if (insertError) {
-                console.error('Error syncing users to users table:', insertError);
+              if (existingError) {
+                console.error('Error fetching existing users:', existingError);
               } else {
-                console.log('Successfully synced users:', insertedData?.length || 0);
+                const existingIds = new Set(existingUsers?.map(user => user.id) || []);
+                const missingUsers = authUsers.users.filter(user => !existingIds.has(user.id));
+                
+                console.log('Missing users to sync:', missingUsers.length);
+                
+                // Sync missing users to our users table
+                if (missingUsers.length > 0) {
+                  const usersToInsert = missingUsers.map(user => ({
+                    id: user.id,
+                    email: user.email || '',
+                    first_name: user.user_metadata?.first_name || '',
+                    last_name: user.user_metadata?.last_name || '',
+                    role: user.user_metadata?.role || 'employee',
+                  }));
+                  
+                  const { data: insertedData, error: insertError } = await supabase
+                    .from('users')
+                    .insert(usersToInsert)
+                    .select();
+                    
+                  if (insertError) {
+                    console.error('Error syncing users to users table:', insertError);
+                  } else {
+                    console.log('Successfully synced users:', insertedData?.length || 0);
+                  }
+                }
               }
             }
           }
+        } catch (syncError) {
+          console.error('Error during user sync process:', syncError);
+          // Continue execution - we still want to fetch existing users even if sync fails
         }
+      } else {
+        console.log('Super admin detected, skipping auth users sync');
       }
       
       // Now query all users from the users table
@@ -97,6 +111,24 @@ export const employeeQueryService = {
       }
       
       console.log('Number of employees fetched:', data.length);
+      
+      // For Super Admin, manually add their own user if it's not in the returned data
+      if (isSuperAdmin && currentUser) {
+        const superAdminExists = data.some(user => user.id === currentUser.id);
+        
+        if (!superAdminExists && currentUser) {
+          console.log('Adding super admin to employees list');
+          data.push({
+            id: currentUser.id,
+            email: currentUser.email,
+            first_name: currentUser.firstName,
+            last_name: currentUser.lastName,
+            role: currentUser.role,
+            position: currentUser.position,
+            employee_id: 'SUPER-ADMIN'
+          });
+        }
+      }
       
       const transformedUsers = transformUsers(data);
       console.log('Transformed users:', transformedUsers);

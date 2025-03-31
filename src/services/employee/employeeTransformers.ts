@@ -16,24 +16,27 @@ export function transformUser(user: any): User | null {
       console.error('User is missing ID field:', user);
     }
     
+    // Support both database field names (snake_case) and frontend field names (camelCase)
+    // This allows the function to work with both database results and frontend objects
     const transformedUser: User = {
       id: user.id || '',
       email: user.email || '',
-      firstName: user.first_name || '',
-      lastName: user.last_name || '',
+      firstName: user.firstName || user.first_name || '',
+      lastName: user.lastName || user.last_name || '',
       role: (user.role === 'admin' || user.role === 'employee') ? user.role : 'employee',
-      employeeId: user.employee_id || '',
+      employeeId: user.employeeId || user.employee_id || '',
       position: user.position || '',
       department: user.department || '',
-      hourlyRate: typeof user.hourly_rate === 'number' ? user.hourly_rate : 0,
-      phoneNumber: user.phone_number || '',
-      avatar: user.avatar_url || '',
+      hourlyRate: typeof user.hourlyRate === 'number' ? user.hourlyRate : 
+                 typeof user.hourly_rate === 'number' ? user.hourly_rate : 0,
+      phoneNumber: user.phoneNumber || user.phone_number || '',
+      avatar: user.avatar || user.avatar_url || '',
       address: {
-        street: user.street || '',
-        city: user.city || '',
-        state: user.state || '',
-        country: user.country || '',
-        zipCode: user.zip_code || ''
+        street: user.street || user.address?.street || '',
+        city: user.city || user.address?.city || '',
+        state: user.state || user.address?.state || '',
+        country: user.country || user.address?.country || '',
+        zipCode: user.zip_code || user.address?.zipCode || ''
       }
     };
     
