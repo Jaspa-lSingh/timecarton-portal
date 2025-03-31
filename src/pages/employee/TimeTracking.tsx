@@ -27,8 +27,7 @@ const EmployeeTimeTracking: React.FC = () => {
       const startDate = format(selectedDate, 'yyyy-MM-dd');
       const endDate = format(selectedDate, 'yyyy-MM-dd');
 
-      const response = await timeEntryService.getTimeEntriesByDateRange(
-        currentUser.id,
+      const response = await timeEntryService.getTimeEntriesByDate(
         startDate,
         endDate
       );

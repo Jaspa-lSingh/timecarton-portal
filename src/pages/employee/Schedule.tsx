@@ -7,6 +7,7 @@ import { shiftService } from '@/services/shiftService';
 import { authService } from '@/services';
 import { Shift } from '@/types';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const EmployeeSchedule: React.FC = () => {
   const [shifts, setShifts] = useState<Shift[]>([]);
