@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { employeeService } from '@/services/employeeService';
 import AdminLayout from '@/components/layouts/AdminLayout';
@@ -20,15 +19,22 @@ const EmployeesPage: React.FC = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("new");
 
+  useEffect(() => {
+    console.log('EmployeesPage mounted, querying employees');
+  }, []);
+
   // Fetch employees data
   const {
     data: employees = [],
     isLoading,
     error,
+    refetch
   } = useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
+      console.log('Executing employee query function');
       const response = await employeeService.getEmployees();
+      console.log('Employee query response:', response);
       if (response.error) throw new Error(response.error);
       return response.data || [];
     },

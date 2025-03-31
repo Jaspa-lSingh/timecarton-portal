@@ -8,6 +8,7 @@ export const employeeQueryService = {
   // Get all employees
   getEmployees: async (): Promise<ApiResponse<User[]>> => {
     try {
+      console.log('Fetching employees from Supabase');
       const { data, error } = await supabase
         .from('users')
         .select('*');
@@ -17,7 +18,8 @@ export const employeeQueryService = {
         return { error: error.message };
       }
       
-      return { data: transformUsers(data) };
+      console.log('Employees fetched:', data);
+      return { data: transformUsers(data || []) };
     } catch (error) {
       console.error('Error fetching employees:', error);
       return { error: 'Network error when fetching employees' };
