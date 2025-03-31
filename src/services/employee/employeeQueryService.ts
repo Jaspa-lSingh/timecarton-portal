@@ -25,7 +25,55 @@ export const employeeQueryService = {
         return { error: 'Admin privileges required' };
       }
       
-      // Make sure we're getting all fields
+      // First check if auth users exist that need to be synced to the users table
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Error fetching auth users:', authError);
+      } else {
+        console.log('Auth users found:', authUsers?.users?.length || 0);
+        
+        // Check if users exist in the auth system but not in our users table
+        if (authUsers?.users?.length > 0) {
+          // Check existing users in our users table
+          const { data: existingUsers, error: existingError } = await supabase
+            .from('users')
+            .select('id');
+            
+          if (existingError) {
+            console.error('Error fetching existing users:', existingError);
+          } else {
+            const existingIds = new Set(existingUsers?.map(user => user.id) || []);
+            const missingUsers = authUsers.users.filter(user => !existingIds.has(user.id));
+            
+            console.log('Missing users to sync:', missingUsers.length);
+            
+            // Sync missing users to our users table
+            if (missingUsers.length > 0) {
+              const usersToInsert = missingUsers.map(user => ({
+                id: user.id,
+                email: user.email || '',
+                first_name: user.user_metadata?.first_name || '',
+                last_name: user.user_metadata?.last_name || '',
+                role: user.user_metadata?.role || 'employee',
+              }));
+              
+              const { data: insertedData, error: insertError } = await supabase
+                .from('users')
+                .insert(usersToInsert)
+                .select();
+                
+              if (insertError) {
+                console.error('Error syncing users to users table:', insertError);
+              } else {
+                console.log('Successfully synced users:', insertedData?.length || 0);
+              }
+            }
+          }
+        }
+      }
+      
+      // Now query all users from the users table
       const { data, error } = await supabase
         .from('users')
         .select('*');

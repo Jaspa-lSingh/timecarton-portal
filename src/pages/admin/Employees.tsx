@@ -6,7 +6,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { User } from '@/types';
-import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle, CheckCircle2, Database, ServerCrash } from 'lucide-react';
 import EmployeeTable from '@/components/employees/EmployeeTable';
 import EmployeeSearch from '@/components/employees/EmployeeSearch';
 import EmployeeActions from '@/components/employees/EmployeeActions';
@@ -20,6 +20,9 @@ const EmployeesPage: React.FC = () => {
   const [currentEmployee, setCurrentEmployee] = useState<Partial<User>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("new");
+  
+  // Add a state to track manual refresh attempts
+  const [refreshAttempts, setRefreshAttempts] = useState(0);
 
   useEffect(() => {
     console.log('EmployeesPage mounted, querying employees');
@@ -30,9 +33,10 @@ const EmployeesPage: React.FC = () => {
     isLoading,
     error,
     refetch,
-    isRefetching
+    isRefetching,
+    isFetched
   } = useQuery({
-    queryKey: ['employees'],
+    queryKey: ['employees', refreshAttempts],
     queryFn: async () => {
       console.log('Executing employee query function');
       const response = await employeeService.getEmployees();
@@ -51,6 +55,14 @@ const EmployeesPage: React.FC = () => {
       if (!response.data) {
         console.warn('No data returned from query function');
         return [];
+      }
+      
+      // Show success notification when employees are synced and found
+      if (response.data.length > 0) {
+        toast({
+          title: 'Employees loaded',
+          description: `Successfully loaded ${response.data.length} employees`,
+        });
       }
       
       return response.data;
@@ -154,7 +166,14 @@ const EmployeesPage: React.FC = () => {
   };
 
   const handleRefresh = () => {
+    // Increment refresh attempts to force a refetch with the updated query key
+    setRefreshAttempts(prev => prev + 1);
     refetch();
+    
+    toast({
+      title: 'Refreshing employees',
+      description: 'Checking for new or updated employees...',
+    });
   };
 
   const filteredEmployees = employees.filter((employee) => {
@@ -225,8 +244,8 @@ const EmployeesPage: React.FC = () => {
               currentEmployee={currentEmployee}
               onSubmit={handleSubmit}
               onCancel={resetForm}
-              isSubmitting={updateMutation.isPending}
-              isUploading={uploadPhotoMutation.isPending}
+              isSubmitting={updateMutation?.isPending}
+              isUploading={uploadPhotoMutation?.isPending}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
             />
@@ -256,16 +275,54 @@ const EmployeesPage: React.FC = () => {
             )}
             
             {employees.length === 0 && !isLoading && !isRefetching && (
-              <div className="text-center py-10 text-gray-500">
-                <p className="mb-2 text-lg">No employees found</p>
-                <p className="text-sm mb-6">Try adding employees using the "Add Employee" button above</p>
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-md inline-block text-left">
-                  <h3 className="font-medium text-blue-700 mb-2">Debugging Information:</h3>
-                  <ul className="text-sm text-blue-600 list-disc pl-5 space-y-1">
-                    <li>Check that you're logged in as an admin user</li>
-                    <li>Verify Supabase database connectivity</li>
-                    <li>Inspect browser console for error messages</li>
-                  </ul>
+              <div className="text-center py-10">
+                <p className="mb-2 text-lg text-gray-500">No employees found</p>
+                <p className="text-sm mb-6 text-gray-400">Try adding employees using the "Add Employee" button above</p>
+                
+                <div className="bg-blue-50 border border-blue-200 p-6 rounded-md mx-auto max-w-lg">
+                  <h3 className="font-medium text-blue-700 mb-4 text-lg flex items-center">
+                    <Database className="mr-2 h-5 w-5" />
+                    Synchronization Status
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3 pb-3 border-b border-blue-100">
+                      <div className={`mt-1 ${isFetched ? 'text-green-500' : 'text-amber-500'}`}>
+                        {isFetched ? <CheckCircle2 className="h-5 w-5" /> : <Loader2 className="h-5 w-5 animate-spin" />}
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-medium text-blue-800">Data Fetch Attempt</h4>
+                        <p className="text-sm text-blue-600">
+                          {isFetched 
+                            ? "Data fetch completed. No employees were found." 
+                            : "Data fetch in progress..."}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded border border-blue-100">
+                      <h4 className="font-medium text-blue-800 mb-2">Debugging Information:</h4>
+                      <ul className="text-sm text-blue-600 list-disc pl-5 space-y-2">
+                        <li>
+                          <span className="font-medium">Authentication:</span> You are logged in as an admin user
+                        </li>
+                        <li>
+                          <span className="font-medium">Database Connection:</span> Connected to Supabase
+                        </li>
+                        <li>
+                          <span className="font-medium">User Synchronization:</span> Auth users will be synced to the users table on refresh
+                        </li>
+                        <li>
+                          <span className="font-medium">Row Level Security:</span> Ensure your RLS policies allow admin users to view all employees
+                        </li>
+                      </ul>
+                    </div>
+                    
+                    <Button onClick={handleRefresh} variant="default" className="w-full">
+                      <RefreshCw className="w-4 h-4 mr-2" /> 
+                      Sync and Refresh Employees
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

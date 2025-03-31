@@ -25,7 +25,7 @@ export function transformUser(user: any): User | null {
       employeeId: user.employee_id || '',
       position: user.position || '',
       department: user.department || '',
-      hourlyRate: user.hourly_rate || 0,
+      hourlyRate: typeof user.hourly_rate === 'number' ? user.hourly_rate : 0,
       phoneNumber: user.phone_number || '',
       avatar: user.avatar_url || '',
       address: {
