@@ -1,6 +1,6 @@
 
 import { User } from '@/types';
-import { supabase, isAuthenticated } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { AuthResponse, authState, SUPER_ADMIN } from './authTypes';
 import { userService } from './userService';
 import { tokenService } from './tokenService';
@@ -10,33 +10,60 @@ export const authService = {
   // Register a new user
   async register(email: string, password: string, userData: Partial<User>): Promise<AuthResponse> {
     try {
-      // Create auth user
+      // Create auth user with user metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            first_name: userData.firstName,
+            last_name: userData.lastName,
+            role: userData.role || 'employee',
+          }
+        }
       });
 
       if (authError) throw new Error(authError.message);
       
-      if (authData.user) {
-        // Add user profile data to the users table
+      if (!authData.user) {
+        throw new Error('Failed to create user');
+      }
+      
+      // The trigger will create the user record in the public.users table
+      // Additional user fields need to be updated separately
+      if (userData.position || userData.department || userData.hourlyRate || userData.phoneNumber) {
         const { error: profileError } = await supabase
           .from('users')
-          .insert([
-            {
-              id: authData.user.id,
-              email,
-              first_name: userData.firstName,
-              last_name: userData.lastName,
-              role: userData.role || 'employee',
-              // Add other user fields as needed
-            },
-          ]);
+          .update({
+            position: userData.position,
+            department: userData.department,
+            hourly_rate: userData.hourlyRate,
+            phone_number: userData.phoneNumber,
+            employee_id: userData.employeeId,
+            street: userData.address?.street,
+            city: userData.address?.city,
+            state: userData.address?.state,
+            country: userData.address?.country,
+            zip_code: userData.address?.zipCode
+          })
+          .eq('id', authData.user.id);
 
-        if (profileError) throw new Error(profileError.message);
+        if (profileError) {
+          console.error('Error updating additional user fields:', profileError);
+          // We don't throw here as the base user was created successfully
+        }
       }
 
-      return { data: authData, message: 'Registration successful' };
+      return { 
+        data: { 
+          id: authData.user.id,
+          email: authData.user.email || '',
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          role: userData.role || 'employee',
+        }, 
+        message: 'Registration successful. Please check your email to confirm your account.' 
+      };
     } catch (error) {
       console.error('Registration error:', error);
       return { error: error instanceof Error ? error.message : 'Registration failed' };
