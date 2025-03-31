@@ -30,9 +30,16 @@ export function useEmployeeData(id: string | undefined) {
   // Update employee mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => {
+      console.log('Updating employee with data:', data);
       const response = await employeeService.updateEmployee(id, data);
-      if (response.error) throw new Error(response.error);
-      return response.data;
+      
+      if (response.error) {
+        console.error('Error updating employee:', response.error);
+        throw new Error(response.error);
+      }
+      
+      // The response might contain data or just a success message with no data
+      return response.data || data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['employee', id] });

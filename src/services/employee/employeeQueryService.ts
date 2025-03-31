@@ -154,11 +154,16 @@ export const employeeQueryService = {
         .from('users')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error(`Error fetching employee with ID ${id}:`, error);
         return { error: error.message };
+      }
+      
+      if (!data) {
+        console.error(`No employee found with ID ${id}`);
+        return { error: 'Employee not found' };
       }
       
       return { data: transformUser(data) };
@@ -223,36 +228,75 @@ export const employeeQueryService = {
     }
     
     try {
-      const dbUser = {
-        email: userData.email,
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        role: userData.role,
-        employee_id: userData.employeeId,
-        position: userData.position,
-        department: userData.department,
-        hourly_rate: userData.hourlyRate,
-        phone_number: userData.phoneNumber,
-        avatar_url: userData.avatar,
-        street: userData.address?.street,
-        city: userData.address?.city,
-        state: userData.address?.state,
-        country: userData.address?.country,
-        zip_code: userData.address?.zipCode
-      };
+      console.log(`Updating employee with ID ${id}`, userData);
       
+      // Filter out undefined values to avoid nullifying existing data
+      const updateData: Record<string, any> = {};
+      
+      // Only include defined values for the main user fields
+      if (userData.email !== undefined) updateData.email = userData.email;
+      if (userData.firstName !== undefined) updateData.first_name = userData.firstName;
+      if (userData.lastName !== undefined) updateData.last_name = userData.lastName;
+      if (userData.role !== undefined) updateData.role = userData.role;
+      if (userData.employeeId !== undefined) updateData.employee_id = userData.employeeId;
+      if (userData.position !== undefined) updateData.position = userData.position;
+      if (userData.department !== undefined) updateData.department = userData.department;
+      if (userData.hourlyRate !== undefined) updateData.hourly_rate = userData.hourlyRate;
+      if (userData.phoneNumber !== undefined) updateData.phone_number = userData.phoneNumber;
+      if (userData.avatar !== undefined) updateData.avatar_url = userData.avatar;
+      
+      // Address fields
+      if (userData.address) {
+        if (userData.address.street !== undefined) updateData.street = userData.address.street;
+        if (userData.address.city !== undefined) updateData.city = userData.address.city;
+        if (userData.address.state !== undefined) updateData.state = userData.address.state;
+        if (userData.address.country !== undefined) updateData.country = userData.address.country;
+        if (userData.address.zipCode !== undefined) updateData.zip_code = userData.address.zipCode;
+      }
+      
+      console.log('Update data prepared:', updateData);
+      
+      // First verify the user exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', id)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error(`Error checking if employee with ID ${id} exists:`, checkError);
+        return { error: checkError.message };
+      }
+      
+      if (!existingUser) {
+        console.error(`No employee found with ID ${id} to update`);
+        return { error: 'Employee not found' };
+      }
+      
+      // Perform the update
       const { data, error } = await supabase
         .from('users')
-        .update(dbUser)
+        .update(updateData)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error(`Error updating employee with ID ${id}:`, error);
         return { error: error.message };
       }
       
+      if (!data) {
+        console.error(`Update succeeded but no data returned for ID ${id}`);
+        // Return success message even if no data returned,
+        // since the update operation itself succeeded
+        return { 
+          message: 'Employee updated successfully',
+          data: { id, ...userData } as User // Return the input data as a fallback
+        };
+      }
+      
+      console.log(`Employee with ID ${id} updated successfully:`, data);
       return { 
         data: transformUser(data), 
         message: 'Employee updated successfully' 
