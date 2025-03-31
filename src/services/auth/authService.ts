@@ -193,7 +193,8 @@ export const authService = {
       return true;
     }
     
-    // Normal authentication check
+    // Import the isAuthenticated function from supabase lib
+    const { isAuthenticated } = await import('@/lib/supabase');
     return await isAuthenticated();
   },
 };
