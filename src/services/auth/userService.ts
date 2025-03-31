@@ -1,6 +1,7 @@
+
 import { User } from '@/types';
-import { supabase } from '@/lib/supabase';
-import { AuthResponse, authState } from './authTypes';
+import { supabase } from '@/integrations/supabase/client';
+import { authState, SUPER_ADMIN, AuthResponse } from './authTypes';
 
 export const userService = {
   // Get current user - returns a User object, not a Promise<AuthResponse>
@@ -12,12 +13,12 @@ export const userService = {
     const isSuperAdminSession = localStorage.getItem('superAdminSession') === 'true';
     if (isSuperAdminSession) {
       const superAdminUser: User = {
-        id: '875626',
-        email: 'jskamboj521@gmail.com',
-        firstName: 'Admin',
-        lastName: 'User',
-        role: 'admin',
-        position: 'Super Administrator',
+        id: SUPER_ADMIN.id,
+        email: SUPER_ADMIN.email,
+        firstName: SUPER_ADMIN.firstName,
+        lastName: SUPER_ADMIN.lastName,
+        role: SUPER_ADMIN.role,
+        position: SUPER_ADMIN.position,
       };
       authState.currentUserCache = superAdminUser;
       return superAdminUser;
@@ -74,7 +75,7 @@ export const userService = {
     getUser();
     return null;
   },
-  
+
   // Check if current user is admin
   isAdmin(): boolean {
     const user = userService.getCurrentUser();
@@ -133,5 +134,5 @@ export const userService = {
       console.error('Update profile error:', error);
       return { error: error instanceof Error ? error.message : 'Failed to update profile' };
     }
-  },
+  }
 };
