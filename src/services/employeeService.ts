@@ -1,7 +1,5 @@
 
 import { User, ApiResponse } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
-import { authService } from './auth';
 import { employeeQueryService } from './employee/employeeQueryService';
 import { employeeProfileService } from './employee/employeeProfileService';
 
