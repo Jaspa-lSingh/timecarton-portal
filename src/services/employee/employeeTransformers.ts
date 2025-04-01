@@ -61,7 +61,6 @@ export const transformUsers = (dbUsers: any[]): User[] => {
       try {
         const transformedUser = transformUser(dbUser);
         transformedUsers.push(transformedUser);
-        console.log(`Successfully transformed user: ${dbUser.id}`);
       } catch (err) {
         console.error(`Error transforming user in batch:`, err);
       }
@@ -74,26 +73,33 @@ export const transformUsers = (dbUsers: any[]): User[] => {
 
 /**
  * Transform employee data from application format to database format
+ * Handle null values and defaults for required fields
  * @param user User data from application
  * @returns Database user object
  */
 export const transformToDbUser = (user: Partial<User>): Record<string, any> => {
-  return {
+  // Ensure all required fields have values to prevent database constraint violations
+  const dbUser = {
     id: user.id,
-    email: user.email,
-    first_name: user.firstName,
-    last_name: user.lastName,
+    email: user.email || '',
+    first_name: user.firstName || '',
+    last_name: user.lastName || '',
     role: user.role || 'employee',
-    employee_id: user.employeeId,
-    position: user.position,
-    department: user.department,
-    hourly_rate: user.hourlyRate,
-    phone_number: user.phoneNumber,
-    avatar_url: user.avatar,
-    street: user.address?.street,
-    city: user.address?.city,
-    state: user.address?.state,
-    country: user.address?.country,
-    zip_code: user.address?.zipCode,
+    employee_id: user.employeeId || '',
+    position: user.position || '',
+    department: user.department || '',
+    hourly_rate: user.hourlyRate || 0,
+    phone_number: user.phoneNumber || '',
+    avatar_url: user.avatar || '',
+    street: user.address?.street || '',
+    city: user.address?.city || '',
+    state: user.address?.state || '',
+    country: user.address?.country || '',
+    zip_code: user.address?.zipCode || '',
   };
+
+  // Filter out undefined values
+  return Object.fromEntries(
+    Object.entries(dbUser).filter(([_, value]) => value !== undefined)
+  );
 };

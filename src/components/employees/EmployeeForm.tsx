@@ -29,7 +29,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
       position: employee.position || '',
       employeeId: employee.employeeId || '',
       department: employee.department || '',
-      hourlyRate: employee.hourlyRate,
+      hourlyRate: employee.hourlyRate || 0,
       phoneNumber: employee.phoneNumber || '',
       address: {
         street: employee.address?.street || '',
@@ -55,8 +55,31 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   };
 
   const handleFormSubmit = (values: EmployeeFormValues) => {
-    onSubmit(values);
-    // The parent will handle the photo upload
+    console.log('Form values being submitted:', values);
+    
+    // Ensure required fields are present with defaults
+    const completeValues = {
+      ...values,
+      // Set defaults for any potentially missing fields to avoid database constraint issues
+      firstName: values.firstName || '',
+      lastName: values.lastName || '',
+      email: values.email || '',
+      position: values.position || '',
+      employeeId: values.employeeId || '',
+      department: values.department || '',
+      hourlyRate: values.hourlyRate || 0,
+      phoneNumber: values.phoneNumber || '',
+      address: {
+        street: values.address?.street || '',
+        city: values.address?.city || '',
+        state: values.address?.state || '',
+        country: values.address?.country || '',
+        zipCode: values.address?.zipCode || '',
+      }
+    };
+    
+    // Pass the photo file to be handled by the parent component
+    onSubmit(completeValues);
   };
 
   return (

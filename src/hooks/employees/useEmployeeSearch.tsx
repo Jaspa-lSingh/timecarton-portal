@@ -34,9 +34,7 @@ export function useEmployeeSearch(employees: User[]) {
       const departmentMatch = employee.department?.toLowerCase()?.includes(searchTerm) || false;
       
       // Return true if any field matches
-      const hasMatch = firstNameMatch || lastNameMatch || emailMatch || positionMatch || employeeIdMatch || departmentMatch;
-      
-      return hasMatch;
+      return firstNameMatch || lastNameMatch || emailMatch || positionMatch || employeeIdMatch || departmentMatch;
     });
   }, [employees, searchQuery]);
 
