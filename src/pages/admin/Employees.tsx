@@ -11,6 +11,16 @@ import EmployeeTable from '@/components/employees/EmployeeTable';
 import EmployeeSearch from '@/components/employees/EmployeeSearch';
 import EmployeeActions from '@/components/employees/EmployeeActions';
 import { Button } from '@/components/ui/button';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const EmployeesPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -20,6 +30,8 @@ const EmployeesPage: React.FC = () => {
   const [currentEmployee, setCurrentEmployee] = useState<Partial<User>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("new");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<string | null>(null);
   
   // Add a state to track manual refresh attempts
   const [refreshAttempts, setRefreshAttempts] = useState(0);
@@ -117,23 +129,35 @@ const EmployeesPage: React.FC = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log(`Starting delete mutation for employee ID: ${id}`);
       const response = await employeeService.deleteEmployee(id);
-      if (response.error) throw new Error(response.error);
+      console.log(`Delete response:`, response);
+      
+      if (response.error) {
+        console.error(`Error in delete mutation: ${response.error}`);
+        throw new Error(response.error);
+      }
+      
       return id;
     },
-    onSuccess: () => {
+    onSuccess: (deletedId) => {
+      console.log(`Delete mutation successful for ID: ${deletedId}`);
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      setRefreshAttempts(prev => prev + 1); // Force a refetch
       toast({
         title: 'Success',
         description: 'Employee deleted successfully',
       });
+      setEmployeeToDelete(null);
     },
     onError: (error: Error) => {
+      console.error('Delete mutation error:', error);
       toast({
-        title: 'Error',
+        title: 'Error deleting employee',
         description: error.message,
         variant: 'destructive',
       });
+      setEmployeeToDelete(null);
     },
   });
 
@@ -160,9 +184,21 @@ const EmployeesPage: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this employee?')) {
-      deleteMutation.mutate(id);
+    setEmployeeToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (employeeToDelete) {
+      console.log(`Confirming delete for employee ID: ${employeeToDelete}`);
+      deleteMutation.mutate(employeeToDelete);
+      setDeleteDialogOpen(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setEmployeeToDelete(null);
+    setDeleteDialogOpen(false);
   };
 
   const handleRefresh = () => {
@@ -244,8 +280,8 @@ const EmployeesPage: React.FC = () => {
               currentEmployee={currentEmployee}
               onSubmit={handleSubmit}
               onCancel={resetForm}
-              isSubmitting={updateMutation?.isPending}
-              isUploading={uploadPhotoMutation?.isPending}
+              isSubmitting={updateMutation.isPending}
+              isUploading={uploadPhotoMutation.isPending}
               activeTab={activeTab}
               setActiveTab={setActiveTab}
             />
@@ -329,6 +365,34 @@ const EmployeesPage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Confirmation Dialog for Employee Deletion */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this employee? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Employee'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };

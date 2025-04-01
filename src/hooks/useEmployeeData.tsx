@@ -86,11 +86,18 @@ export function useEmployeeData(id: string | undefined) {
   // Delete employee mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log(`Deleting employee with ID: ${id}`);
       const response = await employeeService.deleteEmployee(id);
-      if (response.error) throw new Error(response.error);
+      
+      if (response.error) {
+        console.error(`Error deleting employee: ${response.error}`);
+        throw new Error(response.error);
+      }
+      
       return id;
     },
     onSuccess: () => {
+      console.log('Delete mutation successful, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       toast({
         title: 'Success',
@@ -99,6 +106,7 @@ export function useEmployeeData(id: string | undefined) {
       navigate('/admin/employees');
     },
     onError: (error: Error) => {
+      console.error('Delete mutation error:', error);
       toast({
         title: 'Error',
         description: error.message,
@@ -117,7 +125,7 @@ export function useEmployeeData(id: string | undefined) {
   };
 
   const handleDelete = () => {
-    if (id && window.confirm('Are you sure you want to delete this employee?')) {
+    if (id) {
       deleteMutation.mutate(id);
     }
   };
@@ -134,6 +142,7 @@ export function useEmployeeData(id: string | undefined) {
     handleDelete,
     isUpdating: updateMutation.isPending,
     isUploading: uploadPhotoMutation.isPending,
+    isDeleting: deleteMutation.isPending,
     refetch
   };
 }

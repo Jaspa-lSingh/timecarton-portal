@@ -145,10 +145,37 @@ export const employeeMutationService = {
   // Delete employee
   deleteEmployee: async (id: string): Promise<ApiResponse<void>> => {
     if (!authService.isAdmin()) {
+      console.error("Delete operation not authorized - user is not admin");
       return { error: 'Not authorized' };
     }
     
+    // Don't allow deleting the super admin
+    if (id === '875626') {
+      console.error("Attempted to delete super admin account");
+      return { error: 'Cannot delete super admin account' };
+    }
+    
     try {
+      console.log(`Attempting to delete employee with ID: ${id}`);
+      
+      // First verify the user exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', id)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error(`Error checking if employee with ID ${id} exists:`, checkError);
+        return { error: checkError.message };
+      }
+      
+      if (!existingUser) {
+        console.error(`No employee found with ID ${id} to delete`);
+        return { error: 'Employee not found' };
+      }
+      
+      // Perform the delete operation
       const { error } = await supabase
         .from('users')
         .delete()
@@ -159,6 +186,7 @@ export const employeeMutationService = {
         return { error: error.message };
       }
       
+      console.log(`Employee with ID ${id} deleted successfully`);
       return { message: 'Employee deleted successfully' };
     } catch (error) {
       console.error(`Error deleting employee with ID ${id}:`, error);

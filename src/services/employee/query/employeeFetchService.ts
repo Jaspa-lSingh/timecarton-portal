@@ -2,50 +2,40 @@
 import { User, ApiResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { authService } from '@/services/auth';
-import { transformUsers, transformUser } from '../employeeTransformers';
+import { transformUser } from '../employeeTransformers';
 
 /**
  * Service for fetching employee data from Supabase
  */
 export const employeeFetchService = {
-  // Get all employees
+  /**
+   * Get all employees
+   * @returns Promise<ApiResponse<User[]>> Array of employees
+   */
   getEmployees: async (): Promise<ApiResponse<User[]>> => {
     try {
       console.log('Fetching employees from Supabase');
-
-      // Check if user is authenticated and has admin privileges
-      const isAuthenticated = await authService.isAuthenticated();
-      const isAdmin = authService.isAdmin();
-      const currentUser = authService.getCurrentUser();
-      console.log('Auth status:', { isAuthenticated, isAdmin });
       
-      if (!isAuthenticated) {
-        console.error('User is not authenticated');
-        return { error: 'Authentication required' };
-      }
+      // Check authentication status
+      const isAdmin = authService.isAdmin();
+      console.log('Auth status:', { 
+        isAuthenticated: await authService.isAuthenticated(),
+        isAdmin
+      });
       
       if (!isAdmin) {
-        console.error('User does not have admin privileges');
-        return { error: 'Admin privileges required' };
+        console.error('User is not authorized to fetch all employees');
+        return { error: 'Not authorized' };
       }
       
-      // Super admin doesn't need to sync auth users since they're using a different auth mechanism
-      const isSuperAdmin = currentUser?.id === '875626';
-      
-      // Only attempt to sync auth users if not the super admin (who doesn't have this permission)
-      if (!isSuperAdmin) {
-        try {
-          await employeeFetchService._syncAuthUsers();
-        } catch (syncError) {
-          console.error('Error during user sync process:', syncError);
-          // Continue execution - we still want to fetch existing users even if sync fails
-        }
-      } else {
+      // Check if using super admin (non-database user)
+      const currentUser = authService.getCurrentUser();
+      if (currentUser?.id === '875626') {
         console.log('Super admin detected, skipping auth users sync');
       }
       
-      // Now query all users from the users table with more detailed logging
-      const { data, error } = await supabase
+      // Fetch all users from the database
+      const { data: users, error } = await supabase
         .from('users')
         .select('*');
       
@@ -54,31 +44,14 @@ export const employeeFetchService = {
         return { error: error.message };
       }
       
-      console.log('Employees data returned from Supabase:', data);
+      console.log('Employees data returned from Supabase:', users);
+      console.log('Number of employees fetched from database:', users?.length || 0);
       
-      // Check if we have data and it's an array
-      if (!data) {
-        console.warn('No employees found or data is null');
-        return { data: [] };
-      }
-      
-      if (!Array.isArray(data)) {
-        console.warn('Data returned is not an array:', data);
-        return { data: [] };
-      }
-      
-      console.log('Number of employees fetched from database:', data.length);
-      
-      // Always ensure we have an array to work with
-      let allEmployees = [...data];
-      
-      // For Super Admin, manually add their own user if it's not in the returned data
-      if (isSuperAdmin && currentUser) {
-        const superAdminExists = allEmployees.some(user => user.id === currentUser.id);
-        
-        if (!superAdminExists) {
-          console.log('Adding super admin to employees list');
-          allEmployees.push({
+      // If super admin, add them to the list (they don't exist in DB)
+      if (currentUser?.id === '875626') {
+        console.log('Adding super admin to employees list');
+        if (users) {
+          users.push({
             id: currentUser.id,
             email: currentUser.email,
             first_name: currentUser.firstName,
@@ -90,21 +63,59 @@ export const employeeFetchService = {
         }
       }
       
-      console.log('Final employee count before transformation:', allEmployees.length);
-      const transformedUsers = transformUsers(allEmployees);
-      console.log('Transformed users:', transformedUsers);
-      console.log('Number of transformed users:', transformedUsers.length);
+      console.log('Final employee count before transformation:', users?.length || 0);
       
-      return { data: transformedUsers };
+      // Transform database users to application User type
+      if (!users) {
+        return { data: [] };
+      }
+      
+      // Transform users from database format to application format
+      console.log('Transforming users array of length:', users.length);
+      
+      const transformedUsers: User[] = [];
+      
+      for (const user of users) {
+        console.log('Transforming user:', user);
+        
+        try {
+          if (user) {
+            const transformedUser = transformUser(user);
+            transformedUsers.push(transformedUser);
+          }
+        } catch (err) {
+          console.error(`Error transforming user ${user?.id}:`, err);
+        }
+      }
+      
+      console.log('Number of successfully transformed users:', transformedUsers.length);
+      console.log('Transformed users:', transformedUsers);
+      
+      return { 
+        data: transformedUsers,
+        message: `Found ${transformedUsers.length} employees`
+      };
     } catch (error) {
-      console.error('Error fetching employees:', error);
-      return { error: 'Network error when fetching employees' };
+      console.error('Error in getEmployees:', error);
+      return { error: 'Failed to fetch employees' };
     }
   },
-  
-  // Get employee by ID
+
+  /**
+   * Get employee by ID
+   * @param id Employee ID
+   * @returns Promise<ApiResponse<User>> Employee data
+   */
   getEmployeeById: async (id: string): Promise<ApiResponse<User>> => {
     try {
+      // Handle super admin (not in database)
+      const currentUser = authService.getCurrentUser();
+      if (id === '875626' && currentUser?.id === '875626') {
+        return { 
+          data: currentUser
+        };
+      }
+
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -121,67 +132,13 @@ export const employeeFetchService = {
         return { error: 'Employee not found' };
       }
       
-      return { data: transformUser(data) };
+      return { 
+        data: transformUser(data),
+        message: 'Employee found'
+      };
     } catch (error) {
       console.error(`Error fetching employee with ID ${id}:`, error);
-      return { error: 'Network error when fetching employee' };
-    }
-  },
-  
-  // Helper method to sync auth users with the users table
-  _syncAuthUsers: async (): Promise<void> => {
-    // Check if auth users are not synced to the users table
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-    
-    if (authError) {
-      console.error('Error fetching auth users:', authError);
-      
-      // If error is permission related, we'll still try to query users
-      if (authError.message && (
-          authError.message.includes("not_admin") ||
-          authError.message.includes("token needs to have") ||
-          authError.message.includes("permission")
-        )) {
-        console.warn('Cannot sync auth users due to permission issues. Will still attempt to fetch existing users.');
-      }
-    } else if (authUsers?.users?.length > 0) {
-      console.log('Auth users found:', authUsers.users.length);
-      
-      // Check existing users in our users table
-      const { data: existingUsers, error: existingError } = await supabase
-        .from('users')
-        .select('id');
-        
-      if (existingError) {
-        console.error('Error fetching existing users:', existingError);
-      } else {
-        const existingIds = new Set(existingUsers?.map(user => user.id) || []);
-        const missingUsers = authUsers.users.filter(user => !existingIds.has(user.id));
-        
-        console.log('Missing users to sync:', missingUsers.length);
-        
-        // Sync missing users to our users table
-        if (missingUsers.length > 0) {
-          const usersToInsert = missingUsers.map(user => ({
-            id: user.id,
-            email: user.email || '',
-            first_name: user.user_metadata?.first_name || '',
-            last_name: user.user_metadata?.last_name || '',
-            role: user.user_metadata?.role || 'employee',
-          }));
-          
-          const { data: insertedData, error: insertError } = await supabase
-            .from('users')
-            .insert(usersToInsert)
-            .select();
-            
-          if (insertError) {
-            console.error('Error syncing users to users table:', insertError);
-          } else {
-            console.log('Successfully synced users:', insertedData?.length || 0);
-          }
-        }
-      }
+      return { error: 'Failed to fetch employee' };
     }
   }
 };
