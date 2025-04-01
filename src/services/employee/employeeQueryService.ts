@@ -93,7 +93,7 @@ export const employeeQueryService = {
         console.log('Super admin detected, skipping auth users sync');
       }
       
-      // Now query all users from the users table
+      // Now query all users from the users table with more detailed logging
       const { data, error } = await supabase
         .from('users')
         .select('*');
@@ -116,15 +116,18 @@ export const employeeQueryService = {
         return { data: [] };
       }
       
-      console.log('Number of employees fetched:', data.length);
+      console.log('Number of employees fetched from database:', data.length);
+      
+      // Always ensure we have an array to work with
+      let allEmployees = [...data];
       
       // For Super Admin, manually add their own user if it's not in the returned data
       if (isSuperAdmin && currentUser) {
-        const superAdminExists = data.some(user => user.id === currentUser.id);
+        const superAdminExists = allEmployees.some(user => user.id === currentUser.id);
         
-        if (!superAdminExists && currentUser) {
+        if (!superAdminExists) {
           console.log('Adding super admin to employees list');
-          data.push({
+          allEmployees.push({
             id: currentUser.id,
             email: currentUser.email,
             first_name: currentUser.firstName,
@@ -136,7 +139,8 @@ export const employeeQueryService = {
         }
       }
       
-      const transformedUsers = transformUsers(data);
+      console.log('Final employee count before transformation:', allEmployees.length);
+      const transformedUsers = transformUsers(allEmployees);
       console.log('Transformed users:', transformedUsers);
       console.log('Number of transformed users:', transformedUsers.length);
       

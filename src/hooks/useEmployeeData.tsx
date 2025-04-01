@@ -16,6 +16,7 @@ export function useEmployeeData(id: string | undefined) {
     data: employee,
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ['employee', id],
     queryFn: async () => {
@@ -43,6 +44,7 @@ export function useEmployeeData(id: string | undefined) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
       
       // Upload photo if provided
       if (photoFile && data?.id) {
@@ -69,6 +71,7 @@ export function useEmployeeData(id: string | undefined) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
       toast({ title: 'Success', description: 'Profile photo updated successfully' });
     },
     onError: (error: Error) => {
@@ -131,5 +134,6 @@ export function useEmployeeData(id: string | undefined) {
     handleDelete,
     isUpdating: updateMutation.isPending,
     isUploading: uploadPhotoMutation.isPending,
+    refetch
   };
 }
