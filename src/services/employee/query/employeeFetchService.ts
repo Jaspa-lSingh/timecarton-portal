@@ -81,7 +81,9 @@ export const employeeFetchService = {
         try {
           if (user) {
             const transformedUser = transformUser(user);
-            transformedUsers.push(transformedUser);
+            if (transformedUser) {
+              transformedUsers.push(transformedUser);
+            }
           }
         } catch (err) {
           console.error(`Error transforming user ${user?.id}:`, err);
@@ -132,8 +134,13 @@ export const employeeFetchService = {
         return { error: 'Employee not found' };
       }
       
+      const transformedUser = transformUser(data);
+      if (!transformedUser) {
+        return { error: 'Error transforming employee data' };
+      }
+      
       return { 
-        data: transformUser(data),
+        data: transformedUser,
         message: 'Employee found'
       };
     } catch (error) {

@@ -14,6 +14,7 @@ export function transformUser(user: any): User | null {
     // Check for required fields
     if (!user.id) {
       console.error('User is missing ID field:', user);
+      return null;
     }
     
     // Support both database field names (snake_case) and frontend field names (camelCase)

@@ -23,6 +23,7 @@ export function useEmployeeData(id: string | undefined) {
       if (!id) throw new Error('Employee ID is required');
       const response = await employeeService.getEmployeeById(id);
       if (response.error) throw new Error(response.error);
+      if (!response.data) throw new Error('Employee data not found');
       return response.data;
     },
     enabled: !!id,
