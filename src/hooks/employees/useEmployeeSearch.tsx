@@ -20,10 +20,10 @@ export function useEmployeeSearch(employees: User[]) {
       return employees;
     }
     
+    const searchTerm = searchQuery.toLowerCase().trim();
+    
     return employees.filter((employee) => {
       if (!employee) return false;
-      
-      const searchTerm = searchQuery.toLowerCase().trim();
       
       // Check each field that could match the search
       const firstNameMatch = employee.firstName?.toLowerCase()?.includes(searchTerm) || false;
@@ -33,7 +33,10 @@ export function useEmployeeSearch(employees: User[]) {
       const employeeIdMatch = employee.employeeId?.toLowerCase()?.includes(searchTerm) || false;
       const departmentMatch = employee.department?.toLowerCase()?.includes(searchTerm) || false;
       
-      return firstNameMatch || lastNameMatch || emailMatch || positionMatch || employeeIdMatch || departmentMatch;
+      // Return true if any field matches
+      const hasMatch = firstNameMatch || lastNameMatch || emailMatch || positionMatch || employeeIdMatch || departmentMatch;
+      
+      return hasMatch;
     });
   }, [employees, searchQuery]);
 

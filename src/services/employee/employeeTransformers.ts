@@ -53,18 +53,22 @@ export const transformUsers = (dbUsers: any[]): User[] => {
     return [];
   }
   
+  console.log(`Transforming ${dbUsers.length} users`);
+  
   const transformedUsers: User[] = [];
   for (const dbUser of dbUsers) {
     if (dbUser) {
       try {
         const transformedUser = transformUser(dbUser);
         transformedUsers.push(transformedUser);
+        console.log(`Successfully transformed user: ${dbUser.id}`);
       } catch (err) {
         console.error(`Error transforming user in batch:`, err);
       }
     }
   }
   
+  console.log(`Successfully transformed ${transformedUsers.length} out of ${dbUsers.length} users`);
   return transformedUsers;
 };
 

@@ -1,7 +1,7 @@
 
 import { User, ApiResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { transformUser } from '../employeeTransformers';
+import { transformUser, transformUsers } from '../employeeTransformers';
 import { employeeFetchService } from './employeeFetchService';
 
 /**
@@ -27,21 +27,8 @@ export const employeeSearchService = {
         return { error: error.message };
       }
       
-      // Transform each user individually
-      const transformedUsers: User[] = [];
-      
-      if (data) {
-        for (const user of data) {
-          if (user) {
-            try {
-              const transformedUser = transformUser(user);
-              transformedUsers.push(transformedUser);
-            } catch (err) {
-              console.error(`Error transforming user during search:`, err);
-            }
-          }
-        }
-      }
+      // Transform all users using the transformUsers function
+      const transformedUsers = transformUsers(data || []);
       
       return { data: transformedUsers };
     } catch (error) {
@@ -63,21 +50,8 @@ export const employeeSearchService = {
         return { error: error.message };
       }
       
-      // Transform each user individually
-      const transformedUsers: User[] = [];
-      
-      if (data) {
-        for (const user of data) {
-          if (user) {
-            try {
-              const transformedUser = transformUser(user);
-              transformedUsers.push(transformedUser);
-            } catch (err) {
-              console.error(`Error transforming user during filtering:`, err);
-            }
-          }
-        }
-      }
+      // Transform all users using the transformUsers function
+      const transformedUsers = transformUsers(data || []);
       
       return { data: transformedUsers };
     } catch (error) {

@@ -108,12 +108,15 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                     </div>
                     <div>
                       <div className="font-medium">
-                        {employee.firstName || ''} {employee.lastName || ''}
-                        {!employee.firstName && !employee.lastName && employee.email ? 
-                          <span className="italic">{employee.email}</span> : null}
+                        {employee.firstName && employee.lastName ? 
+                          `${employee.firstName} ${employee.lastName}` : 
+                          (!employee.firstName && !employee.lastName && employee.email ? 
+                            <span className="italic">{employee.email}</span> : 
+                            <span className="italic text-gray-400">No name</span>)
+                        }
                       </div>
                       <div className="text-xs text-gray-500">
-                        {employee.email}
+                        {employee.email || 'No email'}
                       </div>
                     </div>
                   </div>

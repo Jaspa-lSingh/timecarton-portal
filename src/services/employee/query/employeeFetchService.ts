@@ -1,8 +1,7 @@
-
 import { User, ApiResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { authService } from '@/services/auth';
-import { transformUser } from '../employeeTransformers';
+import { transformUser, transformUsers } from '../employeeTransformers';
 
 /**
  * Service for fetching employee data from Supabase
@@ -46,8 +45,14 @@ export const employeeFetchService = {
       console.log('Employees data returned from Supabase:', users);
       console.log('Number of employees fetched from database:', users?.length || 0);
       
-      // Initialize the array for transformed users
-      const transformedUsers: User[] = [];
+      // Transform database users to application User type
+      let transformedUsers: User[] = [];
+      
+      if (users && Array.isArray(users)) {
+        // Use the transformUsers function to transform all database users
+        transformedUsers = transformUsers(users);
+        console.log('Transformed database users:', transformedUsers);
+      }
       
       // If super admin, add them to the list (they don't exist in DB)
       if (isSuperAdmin && currentUser) {
@@ -74,34 +79,11 @@ export const employeeFetchService = {
           }
         };
         
-        transformedUsers.push(superAdminUser);
+        // Add super admin at the beginning of the array
+        transformedUsers = [superAdminUser, ...transformedUsers];
       }
       
-      // Transform database users to application User type
-      if (users && Array.isArray(users) && users.length > 0) {
-        console.log('Transforming users array of length:', users.length);
-        
-        for (const user of users) {
-          try {
-            if (user) {
-              const transformedUser = transformUser(user);
-              if (transformedUser) {
-                console.log(`Successfully transformed user: ${user.id}`);
-                transformedUsers.push(transformedUser);
-              } else {
-                console.error(`Failed to transform user ${user.id}: transformUser returned null`);
-              }
-            }
-          } catch (err) {
-            console.error(`Error transforming user:`, err);
-          }
-        }
-      } else {
-        console.warn('No users found in database or users is not an array');
-      }
-      
-      console.log('Number of successfully transformed users:', transformedUsers.length);
-      console.log('Transformed users:', transformedUsers);
+      console.log('Final employees list with super admin (if applicable):', transformedUsers);
       
       return { 
         data: transformedUsers,
