@@ -42,6 +42,32 @@ export const transformUser = (dbUser: any): User => {
 };
 
 /**
+ * Transform an array of database users to application user objects
+ * @param dbUsers Array of users from database
+ * @returns Array of transformed User objects
+ */
+export const transformUsers = (dbUsers: any[]): User[] => {
+  if (!Array.isArray(dbUsers)) {
+    console.error('Cannot transform non-array data to users');
+    return [];
+  }
+  
+  const transformedUsers: User[] = [];
+  for (const dbUser of dbUsers) {
+    if (dbUser) {
+      try {
+        const transformedUser = transformUser(dbUser);
+        transformedUsers.push(transformedUser);
+      } catch (err) {
+        console.error(`Error transforming user in batch:`, err);
+      }
+    }
+  }
+  
+  return transformedUsers;
+};
+
+/**
  * Transform employee data from application format to database format
  * @param user User data from application
  * @returns Database user object
