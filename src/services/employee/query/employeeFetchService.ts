@@ -1,3 +1,4 @@
+
 import { User, ApiResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { authService } from '@/services/auth';
@@ -32,7 +33,7 @@ export const employeeFetchService = {
       const isSuperAdmin = currentUser?.id === '875626';
       console.log('Super admin check:', { isSuperAdmin });
       
-      // Fetch all users from the database
+      // Fetch all users from the database with proper error handling
       const { data: users, error } = await supabase
         .from('users')
         .select('*');
@@ -42,7 +43,7 @@ export const employeeFetchService = {
         return { error: error.message };
       }
       
-      console.log('Employees data returned from Supabase:', users);
+      console.log('Raw employees data returned from Supabase:', users);
       console.log('Number of employees fetched from database:', users?.length || 0);
       
       // Transform database users to application User type
@@ -52,6 +53,8 @@ export const employeeFetchService = {
         // Use the transformUsers function to transform all database users
         transformedUsers = transformUsers(users);
         console.log('Transformed database users:', transformedUsers);
+      } else {
+        console.error('No users found or users is not an array');
       }
       
       // If super admin, add them to the list (they don't exist in DB)

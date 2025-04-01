@@ -20,21 +20,23 @@ export function useEmployeeSearch(employees: User[]) {
       return employees;
     }
     
-    const searchTerm = searchQuery.toLowerCase().trim();
+    const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/);
     
     return employees.filter((employee) => {
       if (!employee) return false;
       
-      // Check each field that could match the search
-      const firstNameMatch = employee.firstName?.toLowerCase()?.includes(searchTerm) || false;
-      const lastNameMatch = employee.lastName?.toLowerCase()?.includes(searchTerm) || false;
-      const emailMatch = employee.email?.toLowerCase()?.includes(searchTerm) || false;
-      const positionMatch = employee.position?.toLowerCase()?.includes(searchTerm) || false;
-      const employeeIdMatch = employee.employeeId?.toLowerCase()?.includes(searchTerm) || false;
-      const departmentMatch = employee.department?.toLowerCase()?.includes(searchTerm) || false;
-      
-      // Return true if any field matches
-      return firstNameMatch || lastNameMatch || emailMatch || positionMatch || employeeIdMatch || departmentMatch;
+      // Check if any search term matches any employee field
+      return searchTerms.some(term => {
+        const firstNameMatch = employee.firstName?.toLowerCase()?.includes(term) || false;
+        const lastNameMatch = employee.lastName?.toLowerCase()?.includes(term) || false;
+        const emailMatch = employee.email?.toLowerCase()?.includes(term) || false;
+        const positionMatch = employee.position?.toLowerCase()?.includes(term) || false;
+        const employeeIdMatch = employee.employeeId?.toLowerCase()?.includes(term) || false;
+        const departmentMatch = employee.department?.toLowerCase()?.includes(term) || false;
+        
+        // Return true if any field matches
+        return firstNameMatch || lastNameMatch || emailMatch || positionMatch || employeeIdMatch || departmentMatch;
+      });
     });
   }, [employees, searchQuery]);
 
