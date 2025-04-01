@@ -19,6 +19,7 @@ export const transformUser = (dbUser: any): User => {
 
   console.log(`Transforming user with ID ${dbUser.id}`);
   
+  // Create user object with safe defaults for nullable fields
   return {
     id: dbUser.id,
     email: dbUser.email || '',

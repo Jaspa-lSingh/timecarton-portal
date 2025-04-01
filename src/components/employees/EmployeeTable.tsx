@@ -63,7 +63,9 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
     );
   }
 
-  if (employees.length === 0) {
+  console.log('Rendering employee table with employees:', employees);
+  
+  if (!employees || employees.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500">
         No employees found
@@ -99,14 +101,16 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                         />
                       ) : (
                         <div className="flex items-center justify-center h-full w-full bg-brand-100 text-brand-700 font-semibold">
-                          {employee.firstName[0]}
-                          {employee.lastName[0]}
+                          {employee.firstName?.[0] || ''}
+                          {employee.lastName?.[0] || ''}
                         </div>
                       )}
                     </div>
                     <div>
                       <div className="font-medium">
-                        {employee.firstName} {employee.lastName}
+                        {employee.firstName || ''} {employee.lastName || ''}
+                        {!employee.firstName && !employee.lastName && employee.email ? 
+                          <span className="italic">{employee.email}</span> : null}
                       </div>
                       <div className="text-xs text-gray-500">
                         {employee.email}

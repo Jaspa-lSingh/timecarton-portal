@@ -54,14 +54,14 @@ export const employeeFetchService = {
         console.log('Adding super admin to employees list');
         
         const superAdminUser: User = {
-          id: currentUser.id,
-          email: currentUser.email || '',
+          id: currentUser.id || '875626',
+          email: currentUser.email || 'admin@example.com',
           firstName: currentUser.firstName || 'Admin',
           lastName: currentUser.lastName || 'User',
           role: 'admin',
           position: 'Super Administrator',
           employeeId: 'SUPER-ADMIN',
-          department: '',
+          department: 'Management',
           hourlyRate: 0,
           phoneNumber: '',
           avatar: '',
@@ -78,21 +78,26 @@ export const employeeFetchService = {
       }
       
       // Transform database users to application User type
-      if (users && users.length > 0) {
+      if (users && Array.isArray(users) && users.length > 0) {
         console.log('Transforming users array of length:', users.length);
         
         for (const user of users) {
-          if (user) {
-            try {
+          try {
+            if (user) {
               const transformedUser = transformUser(user);
               if (transformedUser) {
+                console.log(`Successfully transformed user: ${user.id}`);
                 transformedUsers.push(transformedUser);
+              } else {
+                console.error(`Failed to transform user ${user.id}: transformUser returned null`);
               }
-            } catch (err) {
-              console.error(`Error transforming user ${user.id}:`, err);
             }
+          } catch (err) {
+            console.error(`Error transforming user:`, err);
           }
         }
+      } else {
+        console.warn('No users found in database or users is not an array');
       }
       
       console.log('Number of successfully transformed users:', transformedUsers.length);
