@@ -8,14 +8,48 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { shiftService } from '@/services/shiftService';
 import { employeeService } from '@/services/employeeService';
 import { Shift, User } from '@/types';
-import { Plus, ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Search, Filter, CalendarIcon } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useEmployeeSearch } from '@/hooks/employees/useEmployeeSearch';
+import { toast } from '@/hooks/use-toast';
+import { format, addDays, parseISO } from 'date-fns';
 
 const AdminSchedule: React.FC = () => {
   const [shifts, setShifts] = useState<Shift[]>([]);
-  const [employees, setEmployees] = useState<User[]>([]);
   const [currentWeek, setCurrentWeek] = useState<Date[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
+  const [selectedPosition, setSelectedPosition] = useState<string>('all');
+  const [selectedLocation, setSelectedLocation] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [assignShiftDialogOpen, setAssignShiftDialogOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  
+  // New shift form state
+  const [newShift, setNewShift] = useState({
+    employeeId: '',
+    position: '',
+    startTime: '',
+    endTime: '',
+    location: '',
+    notes: '',
+    department: '',
+  });
+
+  // Fetch employees
+  const { data: employeeData, isLoading: isLoadingEmployees } = useQuery({
+    queryKey: ['employees'],
+    queryFn: async () => {
+      const response = await employeeService.getEmployees();
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response.data || [];
+    }
+  });
+
+  const { filteredEmployees } = useEmployeeSearch(employeeData || []);
   
   useEffect(() => {
     // Generate the current week's dates
@@ -37,12 +71,6 @@ const AdminSchedule: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch employees
-        const employeeResponse = await employeeService.getEmployees();
-        if (employeeResponse.data) {
-          setEmployees(employeeResponse.data);
-        }
-        
         // Fetch shifts for the current week
         if (currentWeek.length > 0) {
           const startDate = formatDate(currentWeek[0]);
@@ -107,7 +135,7 @@ const AdminSchedule: React.FC = () => {
   const getShiftsForDay = (date: Date, employeeId?: string): Shift[] => {
     const dateString = formatDate(date);
     
-    return shifts.filter(shift => {
+    let filteredShifts = shifts.filter(shift => {
       const shiftDate = shift.startTime.split('T')[0];
       
       if (employeeId && employeeId !== 'all') {
@@ -116,6 +144,22 @@ const AdminSchedule: React.FC = () => {
       
       return shiftDate === dateString;
     });
+    
+    // Apply position filter if selected
+    if (selectedPosition !== 'all') {
+      filteredShifts = filteredShifts.filter(shift => 
+        shift.position?.toLowerCase() === selectedPosition.toLowerCase()
+      );
+    }
+    
+    // Apply location filter if selected
+    if (selectedLocation !== 'all') {
+      filteredShifts = filteredShifts.filter(shift => 
+        shift.location?.toLowerCase() === selectedLocation.toLowerCase()
+      );
+    }
+    
+    return filteredShifts;
   };
   
   // Format time for display
@@ -126,8 +170,93 @@ const AdminSchedule: React.FC = () => {
   
   // Get employee name by ID
   const getEmployeeName = (id: string): string => {
-    const employee = employees.find(emp => emp.id === id);
+    if (!employeeData) return 'Unknown';
+    const employee = employeeData.find(emp => emp.id === id);
     return employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
+  };
+
+  // Open assign shift dialog for a specific day
+  const openAssignShiftDialog = (date: Date) => {
+    setSelectedDay(date);
+    
+    // Set default times (9 AM - 5 PM) for the selected day
+    const dayString = formatDate(date);
+    setNewShift({
+      ...newShift,
+      startTime: `${dayString}T09:00:00`,
+      endTime: `${dayString}T17:00:00`,
+    });
+    
+    setAssignShiftDialogOpen(true);
+  };
+
+  // Handle input change for new shift form
+  const handleShiftInputChange = (field: string, value: string) => {
+    setNewShift(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Handle form submission for new shift
+  const handleCreateShift = async () => {
+    if (!newShift.employeeId) {
+      toast({
+        title: "Error",
+        description: "Please select an employee",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newShift.startTime || !newShift.endTime) {
+      toast({
+        title: "Error",
+        description: "Please set both start and end times",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await shiftService.createShift(newShift);
+      
+      if (response.error) {
+        toast({
+          title: "Error",
+          description: response.error,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update shifts list with the new shift
+      setShifts(prev => [...prev, response.data!]);
+      
+      // Close dialog and reset form
+      setAssignShiftDialogOpen(false);
+      setNewShift({
+        employeeId: '',
+        position: '',
+        startTime: '',
+        endTime: '',
+        location: '',
+        notes: '',
+        department: '',
+      });
+      
+      toast({
+        title: "Success",
+        description: "Shift assigned successfully",
+      });
+    } catch (error) {
+      console.error('Error creating shift:', error);
+      toast({
+        title: "Error",
+        description: "Failed to assign shift",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
@@ -168,7 +297,7 @@ const AdminSchedule: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Employees</SelectItem>
-                    {employees.map(employee => (
+                    {employeeData?.map(employee => (
                       <SelectItem key={employee.id} value={employee.id}>
                         {employee.firstName} {employee.lastName}
                       </SelectItem>
@@ -181,7 +310,10 @@ const AdminSchedule: React.FC = () => {
                 <label className="block text-sm font-medium mb-1 text-gray-700">
                   Position
                 </label>
-                <Select defaultValue="all">
+                <Select 
+                  value={selectedPosition}
+                  onValueChange={setSelectedPosition}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="All Positions" />
                   </SelectTrigger>
@@ -199,7 +331,10 @@ const AdminSchedule: React.FC = () => {
                 <label className="block text-sm font-medium mb-1 text-gray-700">
                   Location
                 </label>
-                <Select defaultValue="all">
+                <Select 
+                  value={selectedLocation}
+                  onValueChange={setSelectedLocation}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="All Locations" />
                   </SelectTrigger>
@@ -221,6 +356,8 @@ const AdminSchedule: React.FC = () => {
                   <Input 
                     placeholder="Search..." 
                     className="pl-9"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
               </div>
@@ -313,17 +450,16 @@ const AdminSchedule: React.FC = () => {
                       </div>
                     ))}
                     
-                    {dayShifts.length === 0 && (
-                      <div className="h-full flex items-center justify-center">
-                        <Button 
-                          variant="ghost" 
-                          className="text-gray-400 h-full w-full flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-md border border-dashed"
-                        >
-                          <Plus className="h-5 w-5" />
-                          <span className="text-xs">Add Shift</span>
-                        </Button>
-                      </div>
-                    )}
+                    <div className="h-full flex items-center justify-center">
+                      <Button 
+                        variant="ghost" 
+                        className="text-gray-400 h-full w-full flex flex-col items-center justify-center gap-2 hover:bg-gray-50 rounded-md border border-dashed"
+                        onClick={() => openAssignShiftDialog(date)}
+                      >
+                        <Plus className="h-5 w-5" />
+                        <span className="text-xs">Add Shift</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
@@ -331,6 +467,141 @@ const AdminSchedule: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Assign Shift Dialog */}
+      <Dialog open={assignShiftDialogOpen} onOpenChange={setAssignShiftDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Shift</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Date
+              </label>
+              <div className="flex items-center border rounded-md p-2 bg-gray-50">
+                <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" />
+                <span>{selectedDay ? format(selectedDay, 'EEEE, MMMM d, yyyy') : 'Select a day'}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Employee
+              </label>
+              <Select 
+                value={newShift.employeeId} 
+                onValueChange={(value) => handleShiftInputChange('employeeId', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredEmployees?.map(employee => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.firstName} {employee.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-700">
+                  Start Time
+                </label>
+                <Input 
+                  type="datetime-local" 
+                  value={newShift.startTime}
+                  onChange={(e) => handleShiftInputChange('startTime', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-gray-700">
+                  End Time
+                </label>
+                <Input 
+                  type="datetime-local" 
+                  value={newShift.endTime}
+                  onChange={(e) => handleShiftInputChange('endTime', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Position
+              </label>
+              <Select 
+                value={newShift.position} 
+                onValueChange={(value) => handleShiftInputChange('position', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select position" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="barista">Barista</SelectItem>
+                  <SelectItem value="server">Server</SelectItem>
+                  <SelectItem value="cook">Cook</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Location
+              </label>
+              <Select 
+                value={newShift.location} 
+                onValueChange={(value) => handleShiftInputChange('location', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="main">Main Store</SelectItem>
+                  <SelectItem value="downtown">Downtown</SelectItem>
+                  <SelectItem value="mall">Mall Location</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Department
+              </label>
+              <Input 
+                placeholder="Department" 
+                value={newShift.department}
+                onChange={(e) => handleShiftInputChange('department', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Notes
+              </label>
+              <Input 
+                placeholder="Any special instructions" 
+                value={newShift.notes}
+                onChange={(e) => handleShiftInputChange('notes', e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="sm:justify-start">
+            <Button type="button" variant="secondary" onClick={() => setAssignShiftDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleCreateShift}>
+              Assign Shift
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
