@@ -97,6 +97,13 @@ export function useEmployeeMutations(resetForm: () => void, setRefreshAttempts: 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       console.log(`Starting delete mutation for employee ID: ${id}`);
+      
+      // Super admin check to prevent deletion
+      if (id === '875626') {
+        console.error(`Cannot delete super admin account (ID: ${id})`);
+        throw new Error('Cannot delete super admin account');
+      }
+      
       const response = await employeeService.deleteEmployee(id);
       console.log(`Delete response:`, response);
       
@@ -109,14 +116,22 @@ export function useEmployeeMutations(resetForm: () => void, setRefreshAttempts: 
     },
     onSuccess: (deletedId) => {
       console.log(`Delete mutation successful for ID: ${deletedId}`);
+      
+      // Important: Invalidate and remove queries related to this employee
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.removeQueries({ queryKey: ['employee', deletedId] });
-      setRefreshAttempts(prev => prev + 1); // Force a refetch
+      
+      // Force a refetch to update the UI
+      setRefreshAttempts(prev => prev + 1);
+      
       toast({
         title: 'Success',
         description: 'Employee deleted successfully',
       });
+      
+      // Reset state
       setEmployeeToDelete(null);
+      setDeleteDialogOpen(false);
     },
     onError: (error: Error) => {
       console.error('Delete mutation error:', error);
@@ -125,12 +140,25 @@ export function useEmployeeMutations(resetForm: () => void, setRefreshAttempts: 
         description: error.message,
         variant: 'destructive',
       });
+      // Still need to reset state on error
       setEmployeeToDelete(null);
+      setDeleteDialogOpen(false);
     },
   });
   
   const handleDelete = (id: string) => {
     console.log(`Preparing to delete employee ID: ${id}`);
+    
+    if (!id) {
+      console.error('Cannot delete: no employee ID provided');
+      toast({
+        title: 'Error',
+        description: 'Cannot delete: no employee ID provided',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setEmployeeToDelete(id);
     setDeleteDialogOpen(true);
   };
@@ -139,9 +167,14 @@ export function useEmployeeMutations(resetForm: () => void, setRefreshAttempts: 
     if (employeeToDelete) {
       console.log(`Confirming delete for employee ID: ${employeeToDelete}`);
       deleteMutation.mutate(employeeToDelete);
-      setDeleteDialogOpen(false);
     } else {
       console.warn('Cannot delete: no employee ID selected');
+      toast({
+        title: 'Error',
+        description: 'Cannot delete: no employee selected',
+        variant: 'destructive',
+      });
+      setDeleteDialogOpen(false);
     }
   };
 

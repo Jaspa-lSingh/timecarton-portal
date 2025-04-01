@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { User } from '@/types';
 import { Link } from 'react-router-dom';
@@ -147,7 +148,10 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onDelete(employee.id)}
+                  onClick={() => {
+                    console.log(`Delete button clicked for employee ID: ${employee.id}`);
+                    onDelete(employee.id);
+                  }}
                   className="h-8 w-8 p-0 text-red-500"
                 >
                   <Trash2 className="h-4 w-4" />

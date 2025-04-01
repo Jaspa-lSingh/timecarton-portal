@@ -221,6 +221,7 @@ export const employeeMutationService = {
     try {
       console.log(`Attempting to delete employee with ID: ${id}`);
       
+      // First check if the employee exists
       const { data: existingUser, error: checkError } = await supabase
         .from('users')
         .select('id')
@@ -237,6 +238,7 @@ export const employeeMutationService = {
         return { message: 'Employee deleted successfully' };
       }
       
+      // Perform the delete operation
       const { error } = await supabase
         .from('users')
         .delete()
