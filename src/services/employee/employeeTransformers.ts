@@ -20,7 +20,7 @@ export function transformUser(user: any): User | null {
     // Support both database field names (snake_case) and frontend field names (camelCase)
     // This allows the function to work with both database results and frontend objects
     const transformedUser: User = {
-      id: user.id || '',
+      id: user.id.toString(), // Ensure ID is always a string
       email: user.email || '',
       firstName: user.firstName || user.first_name || '',
       lastName: user.lastName || user.last_name || '',
@@ -33,11 +33,11 @@ export function transformUser(user: any): User | null {
       phoneNumber: user.phoneNumber || user.phone_number || '',
       avatar: user.avatar || user.avatar_url || '',
       address: {
-        street: user.street || user.address?.street || '',
-        city: user.city || user.address?.city || '',
-        state: user.state || user.address?.state || '',
-        country: user.country || user.address?.country || '',
-        zipCode: user.zip_code || user.address?.zipCode || ''
+        street: user.street || (user.address?.street || ''),
+        city: user.city || (user.address?.city || ''),
+        state: user.state || (user.address?.state || ''),
+        country: user.country || (user.address?.country || ''),
+        zipCode: user.zip_code || (user.address?.zipCode || '')
       }
     };
     

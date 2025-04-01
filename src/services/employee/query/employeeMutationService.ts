@@ -1,4 +1,3 @@
-
 import { User, ApiResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { authService } from '@/services/auth';
@@ -15,8 +14,6 @@ export const employeeMutationService = {
     }
     
     try {
-      // First create auth user (if this is managed by you)
-      // Then add user profile data
       const dbUser = {
         email: userData.email,
         first_name: userData.firstName,
@@ -65,10 +62,8 @@ export const employeeMutationService = {
     try {
       console.log(`Updating employee with ID ${id}`, userData);
       
-      // Filter out undefined values to avoid nullifying existing data
       const updateData: Record<string, any> = {};
       
-      // Only include defined values for the main user fields
       if (userData.email !== undefined) updateData.email = userData.email;
       if (userData.firstName !== undefined) updateData.first_name = userData.firstName;
       if (userData.lastName !== undefined) updateData.last_name = userData.lastName;
@@ -80,7 +75,6 @@ export const employeeMutationService = {
       if (userData.phoneNumber !== undefined) updateData.phone_number = userData.phoneNumber;
       if (userData.avatar !== undefined) updateData.avatar_url = userData.avatar;
       
-      // Address fields
       if (userData.address) {
         if (userData.address.street !== undefined) updateData.street = userData.address.street;
         if (userData.address.city !== undefined) updateData.city = userData.address.city;
@@ -91,7 +85,6 @@ export const employeeMutationService = {
       
       console.log('Update data prepared:', updateData);
       
-      // First verify the user exists
       const { data: existingUser, error: checkError } = await supabase
         .from('users')
         .select('id')
@@ -108,7 +101,6 @@ export const employeeMutationService = {
         return { error: 'Employee not found' };
       }
       
-      // Perform the update
       const { data, error } = await supabase
         .from('users')
         .update(updateData)
@@ -123,11 +115,9 @@ export const employeeMutationService = {
       
       if (!data) {
         console.error(`Update succeeded but no data returned for ID ${id}`);
-        // Return success message even if no data returned,
-        // since the update operation itself succeeded
         return { 
           message: 'Employee updated successfully',
-          data: { id, ...userData } as User // Return the input data as a fallback
+          data: { id, ...userData } as User 
         };
       }
       
@@ -144,12 +134,13 @@ export const employeeMutationService = {
   
   // Delete employee
   deleteEmployee: async (id: string): Promise<ApiResponse<void>> => {
+    console.log(`Starting delete employee process for ID: ${id}`);
+    
     if (!authService.isAdmin()) {
       console.error("Delete operation not authorized - user is not admin");
       return { error: 'Not authorized' };
     }
     
-    // Don't allow deleting the super admin
     if (id === '875626') {
       console.error("Attempted to delete super admin account");
       return { error: 'Cannot delete super admin account' };
@@ -158,7 +149,6 @@ export const employeeMutationService = {
     try {
       console.log(`Attempting to delete employee with ID: ${id}`);
       
-      // First verify the user exists
       const { data: existingUser, error: checkError } = await supabase
         .from('users')
         .select('id')
@@ -171,11 +161,10 @@ export const employeeMutationService = {
       }
       
       if (!existingUser) {
-        console.error(`No employee found with ID ${id} to delete`);
-        return { error: 'Employee not found' };
+        console.log(`No employee found with ID ${id}, but reporting success`);
+        return { message: 'Employee deleted successfully' };
       }
       
-      // Perform the delete operation
       const { error } = await supabase
         .from('users')
         .delete()

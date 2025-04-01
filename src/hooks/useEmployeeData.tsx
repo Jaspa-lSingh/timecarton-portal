@@ -21,9 +21,17 @@ export function useEmployeeData(id: string | undefined) {
     queryKey: ['employee', id],
     queryFn: async () => {
       if (!id) throw new Error('Employee ID is required');
+      console.log(`Fetching employee with ID: ${id}`);
       const response = await employeeService.getEmployeeById(id);
-      if (response.error) throw new Error(response.error);
-      if (!response.data) throw new Error('Employee data not found');
+      if (response.error) {
+        console.error(`Error fetching employee: ${response.error}`);
+        throw new Error(response.error);
+      }
+      if (!response.data) {
+        console.error('Employee data not found');
+        throw new Error('Employee data not found');
+      }
+      console.log('Employee data retrieved successfully:', response.data);
       return response.data;
     },
     enabled: !!id,
@@ -49,12 +57,14 @@ export function useEmployeeData(id: string | undefined) {
       
       // Upload photo if provided
       if (photoFile && data?.id) {
+        console.log(`Photo file detected, uploading for user: ${data.id}`);
         uploadPhotoMutation.mutate({ id: data.id, file: photoFile });
       } else {
         toast({ title: 'Success', description: 'Employee updated successfully' });
       }
     },
     onError: (error: Error) => {
+      console.error('Update mutation error:', error);
       toast({
         title: 'Error',
         description: error.message,
@@ -66,8 +76,13 @@ export function useEmployeeData(id: string | undefined) {
   // Upload photo mutation
   const uploadPhotoMutation = useMutation({
     mutationFn: async ({ id, file }: { id: string; file: File }) => {
+      console.log(`Starting photo upload for user: ${id}`);
       const response = await employeeService.uploadProfilePhoto(id, file);
-      if (response.error) throw new Error(response.error);
+      if (response.error) {
+        console.error(`Photo upload error: ${response.error}`);
+        throw new Error(response.error);
+      }
+      console.log('Photo upload successful:', response.data);
       return response.data;
     },
     onSuccess: () => {
@@ -76,6 +91,7 @@ export function useEmployeeData(id: string | undefined) {
       toast({ title: 'Success', description: 'Profile photo updated successfully' });
     },
     onError: (error: Error) => {
+      console.error('Photo upload mutation error:', error);
       toast({
         title: 'Error uploading photo',
         description: error.message,
@@ -118,6 +134,7 @@ export function useEmployeeData(id: string | undefined) {
 
   const handleSubmit = (values: Partial<User>) => {
     if (id) {
+      console.log(`Submitting update for employee ID: ${id}`);
       updateMutation.mutate({
         id,
         data: values,
@@ -127,6 +144,7 @@ export function useEmployeeData(id: string | undefined) {
 
   const handleDelete = () => {
     if (id) {
+      console.log(`Initiating delete for employee ID: ${id}`);
       deleteMutation.mutate(id);
     }
   };
