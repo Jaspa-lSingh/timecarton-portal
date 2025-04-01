@@ -1,7 +1,7 @@
 
 import { User, ApiResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
-import { transformUsers } from '../employeeTransformers';
+import { transformUser } from '../employeeTransformers';
 import { employeeFetchService } from './employeeFetchService';
 
 /**
@@ -27,7 +27,23 @@ export const employeeSearchService = {
         return { error: error.message };
       }
       
-      return { data: transformUsers(data) };
+      // Transform each user individually
+      const transformedUsers: User[] = [];
+      
+      if (data) {
+        for (const user of data) {
+          if (user) {
+            try {
+              const transformedUser = transformUser(user);
+              transformedUsers.push(transformedUser);
+            } catch (err) {
+              console.error(`Error transforming user during search:`, err);
+            }
+          }
+        }
+      }
+      
+      return { data: transformedUsers };
     } catch (error) {
       console.error('Error searching employees:', error);
       return { error: 'Network error when searching employees' };
@@ -47,7 +63,23 @@ export const employeeSearchService = {
         return { error: error.message };
       }
       
-      return { data: transformUsers(data) };
+      // Transform each user individually
+      const transformedUsers: User[] = [];
+      
+      if (data) {
+        for (const user of data) {
+          if (user) {
+            try {
+              const transformedUser = transformUser(user);
+              transformedUsers.push(transformedUser);
+            } catch (err) {
+              console.error(`Error transforming user during filtering:`, err);
+            }
+          }
+        }
+      }
+      
+      return { data: transformedUsers };
     } catch (error) {
       console.error(`Error filtering employees by department ${department}:`, error);
       return { error: 'Network error when filtering employees' };
