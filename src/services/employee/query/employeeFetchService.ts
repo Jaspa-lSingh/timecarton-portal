@@ -30,9 +30,8 @@ export const employeeFetchService = {
       
       // Check if using super admin (non-database user)
       const currentUser = authService.getCurrentUser();
-      if (currentUser?.id === '875626') {
-        console.log('Super admin detected, skipping auth users sync');
-      }
+      const isSuperAdmin = currentUser?.id === '875626';
+      console.log('Super admin check:', { isSuperAdmin });
       
       // Fetch all users from the database
       const { data: users, error } = await supabase
@@ -47,46 +46,52 @@ export const employeeFetchService = {
       console.log('Employees data returned from Supabase:', users);
       console.log('Number of employees fetched from database:', users?.length || 0);
       
-      // If super admin, add them to the list (they don't exist in DB)
-      if (currentUser?.id === '875626') {
-        console.log('Adding super admin to employees list');
-        if (users) {
-          users.push({
-            id: currentUser.id,
-            email: currentUser.email,
-            first_name: currentUser.firstName,
-            last_name: currentUser.lastName,
-            role: currentUser.role,
-            position: currentUser.position,
-            employee_id: 'SUPER-ADMIN'
-          });
-        }
-      }
-      
-      console.log('Final employee count before transformation:', users?.length || 0);
-      
-      // Transform database users to application User type
-      if (!users) {
-        return { data: [] };
-      }
-      
-      // Transform users from database format to application format
-      console.log('Transforming users array of length:', users.length);
-      
+      // Initialize the array for transformed users
       const transformedUsers: User[] = [];
       
-      for (const user of users) {
-        console.log('Transforming user:', user);
+      // If super admin, add them to the list (they don't exist in DB)
+      if (isSuperAdmin && currentUser) {
+        console.log('Adding super admin to employees list');
         
-        try {
+        const superAdminUser: User = {
+          id: currentUser.id,
+          email: currentUser.email || '',
+          firstName: currentUser.firstName || 'Admin',
+          lastName: currentUser.lastName || 'User',
+          role: 'admin',
+          position: 'Super Administrator',
+          employeeId: 'SUPER-ADMIN',
+          department: '',
+          hourlyRate: 0,
+          phoneNumber: '',
+          avatar: '',
+          address: {
+            street: '',
+            city: '',
+            state: '',
+            country: '',
+            zipCode: ''
+          }
+        };
+        
+        transformedUsers.push(superAdminUser);
+      }
+      
+      // Transform database users to application User type
+      if (users && users.length > 0) {
+        console.log('Transforming users array of length:', users.length);
+        
+        for (const user of users) {
           if (user) {
-            const transformedUser = transformUser(user);
-            if (transformedUser) {
-              transformedUsers.push(transformedUser);
+            try {
+              const transformedUser = transformUser(user);
+              if (transformedUser) {
+                transformedUsers.push(transformedUser);
+              }
+            } catch (err) {
+              console.error(`Error transforming user ${user.id}:`, err);
             }
           }
-        } catch (err) {
-          console.error(`Error transforming user ${user?.id}:`, err);
         }
       }
       
@@ -113,9 +118,28 @@ export const employeeFetchService = {
       // Handle super admin (not in database)
       const currentUser = authService.getCurrentUser();
       if (id === '875626' && currentUser?.id === '875626') {
-        return { 
-          data: currentUser
+        const superAdminUser: User = {
+          id: currentUser.id,
+          email: currentUser.email || '',
+          firstName: currentUser.firstName || 'Admin',
+          lastName: currentUser.lastName || 'User',
+          role: 'admin',
+          position: 'Super Administrator',
+          employeeId: 'SUPER-ADMIN',
+          department: '',
+          hourlyRate: 0,
+          phoneNumber: '',
+          avatar: '',
+          address: {
+            street: '',
+            city: '',
+            state: '',
+            country: '',
+            zipCode: ''
+          }
         };
+        
+        return { data: superAdminUser };
       }
 
       const { data, error } = await supabase

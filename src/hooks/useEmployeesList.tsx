@@ -41,42 +41,67 @@ export function useEmployeesList() {
         throw new Error(response.error);
       }
       
-      if (!response.data) {
-        console.warn('No data returned from query function');
+      if (!response.data || !Array.isArray(response.data)) {
+        console.warn('No data returned from query function or data is not an array');
         return [];
       }
       
+      // Filter out any null/undefined entries
+      const validEmployees = response.data.filter(Boolean);
+      
       // Show success notification when employees are synced and found
-      if (response.data.length > 0) {
+      if (validEmployees.length > 0) {
         toast({
           title: 'Employees loaded',
-          description: `Successfully loaded ${response.data.length} employees`,
+          description: `Successfully loaded ${validEmployees.length} employees`,
         });
       }
       
-      return response.data;
+      return validEmployees;
     },
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<User> }) => {
+      console.log(`Starting update mutation for employee ID: ${id}`, data);
       const response = await employeeService.updateEmployee(id, data);
-      if (response.error) throw new Error(response.error);
+      console.log(`Update response:`, response);
+      
+      if (response.error) {
+        console.error(`Error in update mutation: ${response.error}`);
+        throw new Error(response.error);
+      }
+      
+      if (!response.data) {
+        console.error('Update mutation returned no data');
+        throw new Error('Failed to update employee - no data returned');
+      }
+      
       return response.data;
     },
     onSuccess: (data) => {
+      console.log(`Update mutation successful for ID: ${data?.id}`);
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.setQueryData(['employee', data?.id], data);
       
       if (photoFile && data?.id) {
         uploadPhotoMutation.mutate({ id: data.id, file: photoFile });
       } else {
-        toast({ title: 'Success', description: 'Employee updated successfully' });
+        toast({ 
+          title: 'Success', 
+          description: 'Employee updated successfully'
+        });
         resetForm();
+        setRefreshAttempts(prev => prev + 1); // Force a refetch
       }
     },
     onError: (error: Error) => {
+      console.error('Update mutation error:', error);
       toast({
-        title: 'Error',
+        title: 'Error updating employee',
         description: error.message,
         variant: 'destructive',
       });
@@ -85,16 +110,30 @@ export function useEmployeesList() {
 
   const uploadPhotoMutation = useMutation({
     mutationFn: async ({ id, file }: { id: string; file: File }) => {
+      console.log(`Starting photo upload mutation for employee ID: ${id}`);
       const response = await employeeService.uploadProfilePhoto(id, file);
-      if (response.error) throw new Error(response.error);
+      console.log(`Photo upload response:`, response);
+      
+      if (response.error) {
+        console.error(`Error in photo upload mutation: ${response.error}`);
+        throw new Error(response.error);
+      }
+      
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      console.log(`Photo upload mutation successful for ID: ${variables.id}`);
       queryClient.invalidateQueries({ queryKey: ['employees'] });
-      toast({ title: 'Success', description: 'Profile photo updated successfully' });
+      queryClient.invalidateQueries({ queryKey: ['employee', variables.id] });
+      toast({ 
+        title: 'Success', 
+        description: 'Profile photo updated successfully'
+      });
       resetForm();
+      setRefreshAttempts(prev => prev + 1); // Force a refetch
     },
     onError: (error: Error) => {
+      console.error('Photo upload mutation error:', error);
       toast({
         title: 'Error uploading photo',
         description: error.message,
@@ -120,6 +159,7 @@ export function useEmployeesList() {
     onSuccess: (deletedId) => {
       console.log(`Delete mutation successful for ID: ${deletedId}`);
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.removeQueries({ queryKey: ['employee', deletedId] });
       setRefreshAttempts(prev => prev + 1); // Force a refetch
       toast({
         title: 'Success',
@@ -146,21 +186,33 @@ export function useEmployeesList() {
   };
 
   const handleSubmit = (values: Partial<User>) => {
+    console.log('Handle submit called with values:', values);
+    
     if (isEditMode && currentEmployee.id) {
+      console.log(`Submitting update for employee ID: ${currentEmployee.id}`);
       updateMutation.mutate({
         id: currentEmployee.id,
         data: values,
+      });
+    } else {
+      console.warn('Cannot update: no employee ID or not in edit mode');
+      toast({
+        title: 'Error',
+        description: 'Cannot update employee: missing ID or not in edit mode',
+        variant: 'destructive',
       });
     }
   };
 
   const handleEdit = (employee: User) => {
+    console.log('Editing employee:', employee);
     setCurrentEmployee(employee);
     setIsEditMode(true);
     setOpenDialog(true);
   };
 
   const handleDelete = (id: string) => {
+    console.log(`Preparing to delete employee ID: ${id}`);
     setEmployeeToDelete(id);
     setDeleteDialogOpen(true);
   };
@@ -170,15 +222,19 @@ export function useEmployeesList() {
       console.log(`Confirming delete for employee ID: ${employeeToDelete}`);
       deleteMutation.mutate(employeeToDelete);
       setDeleteDialogOpen(false);
+    } else {
+      console.warn('Cannot delete: no employee ID selected');
     }
   };
 
   const cancelDelete = () => {
+    console.log('Delete operation canceled');
     setEmployeeToDelete(null);
     setDeleteDialogOpen(false);
   };
 
   const handleRefresh = () => {
+    console.log('Manual refresh triggered');
     setRefreshAttempts(prev => prev + 1);
     refetch();
     
@@ -188,7 +244,8 @@ export function useEmployeesList() {
     });
   };
 
-  const filteredEmployees = employees.filter((employee) => {
+  // Apply search filter
+  const filteredEmployees = Array.isArray(employees) ? employees.filter((employee) => {
     if (!employee) return false;
     
     const searchTerm = searchQuery.toLowerCase();
@@ -200,7 +257,7 @@ export function useEmployeesList() {
       employee.employeeId?.toLowerCase()?.includes(searchTerm) ||
       employee.department?.toLowerCase()?.includes(searchTerm)
     );
-  });
+  }) : [];
 
   return {
     employees: filteredEmployees,

@@ -27,6 +27,18 @@ const DeleteEmployeeDialog: React.FC<DeleteEmployeeDialogProps> = ({
   onCancel,
   isDeleting
 }) => {
+  // Handle the confirm action
+  const handleConfirm = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onConfirm();
+  };
+  
+  // Handle the cancel action
+  const handleCancel = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onCancel();
+  };
+  
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -37,10 +49,11 @@ const DeleteEmployeeDialog: React.FC<DeleteEmployeeDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={handleCancel} disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onConfirm}
+            onClick={handleConfirm}
             className="bg-red-600 hover:bg-red-700 text-white"
+            disabled={isDeleting}
           >
             {isDeleting ? (
               <>

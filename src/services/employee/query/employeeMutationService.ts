@@ -1,3 +1,4 @@
+
 import { User, ApiResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { authService } from '@/services/auth';
@@ -85,6 +86,46 @@ export const employeeMutationService = {
       
       console.log('Update data prepared:', updateData);
       
+      if (Object.keys(updateData).length === 0) {
+        console.log('No fields to update');
+        return { error: 'No fields to update' };
+      }
+      
+      // Special handling for super admin
+      if (id === '875626') {
+        console.log('Updating super admin user (frontend only)');
+        const currentUser = authService.getCurrentUser();
+        if (!currentUser) {
+          return { error: 'Super admin user not found' };
+        }
+        
+        // Update only in memory/session
+        const updatedSuperAdmin: User = {
+          ...currentUser,
+          firstName: userData.firstName || currentUser.firstName || 'Admin',
+          lastName: userData.lastName || currentUser.lastName || 'User',
+          email: userData.email || currentUser.email || '',
+          position: userData.position || currentUser.position || 'Super Administrator',
+          employeeId: 'SUPER-ADMIN',
+          department: userData.department || currentUser.department || '',
+          hourlyRate: userData.hourlyRate || currentUser.hourlyRate || 0,
+          phoneNumber: userData.phoneNumber || currentUser.phoneNumber || '',
+          avatar: userData.avatar || currentUser.avatar || '',
+          address: {
+            street: userData.address?.street || currentUser.address?.street || '',
+            city: userData.address?.city || currentUser.address?.city || '',
+            state: userData.address?.state || currentUser.address?.state || '',
+            country: userData.address?.country || currentUser.address?.country || '',
+            zipCode: userData.address?.zipCode || currentUser.address?.zipCode || '',
+          }
+        };
+        
+        return { 
+          data: updatedSuperAdmin,
+          message: 'Super admin updated successfully' 
+        };
+      }
+      
       const { data: existingUser, error: checkError } = await supabase
         .from('users')
         .select('id')
@@ -101,6 +142,9 @@ export const employeeMutationService = {
         return { error: 'Employee not found' };
       }
       
+      // Debug data before update
+      console.log(`Executing update for employee ID ${id} with data:`, updateData);
+      
       const { data, error } = await supabase
         .from('users')
         .update(updateData)
@@ -113,17 +157,45 @@ export const employeeMutationService = {
         return { error: error.message };
       }
       
+      // Debug response after update
+      console.log(`Update response for employee ID ${id}:`, data);
+      
       if (!data) {
         console.error(`Update succeeded but no data returned for ID ${id}`);
+        // Fetch the updated user to return complete data
+        const { data: refreshedUser, error: refreshError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+          
+        if (refreshError || !refreshedUser) {
+          console.error(`Failed to fetch updated employee data for ID ${id}:`, refreshError);
+          return { 
+            message: 'Employee updated successfully but unable to fetch updated data',
+            data: { id, ...userData } as User 
+          };
+        }
+        
+        const transformedUser = transformUser(refreshedUser);
         return { 
-          message: 'Employee updated successfully',
-          data: { id, ...userData } as User 
+          data: transformedUser || ({ id, ...userData } as User), 
+          message: 'Employee updated successfully' 
         };
       }
       
       console.log(`Employee with ID ${id} updated successfully:`, data);
+      const transformedUser = transformUser(data);
+      
+      if (!transformedUser) {
+        console.error(`Failed to transform updated user data for ID ${id}`);
+        return {
+          error: 'Failed to transform updated employee data'
+        };
+      }
+      
       return { 
-        data: transformUser(data), 
+        data: transformedUser, 
         message: 'Employee updated successfully' 
       };
     } catch (error) {

@@ -1,73 +1,68 @@
 
 import { User } from '@/types';
 
-// Helper function to transform database model to frontend model
-export function transformUser(user: any): User | null {
-  if (!user) {
-    console.error('Attempted to transform null or undefined user');
-    return null;
+/**
+ * Transform user data from database format to application format
+ * @param dbUser User data from database
+ * @returns Transformed User object
+ */
+export const transformUser = (dbUser: any): User => {
+  if (!dbUser) {
+    console.error('Cannot transform undefined or null user');
+    throw new Error('Invalid user data');
   }
-  
-  try {
-    console.log('Transforming user:', user);
-    
-    // Check for required fields
-    if (!user.id) {
-      console.error('User is missing ID field:', user);
-      return null;
-    }
-    
-    // Support both database field names (snake_case) and frontend field names (camelCase)
-    // This allows the function to work with both database results and frontend objects
-    const transformedUser: User = {
-      id: user.id.toString(), // Ensure ID is always a string
-      email: user.email || '',
-      firstName: user.firstName || user.first_name || '',
-      lastName: user.lastName || user.last_name || '',
-      role: (user.role === 'admin' || user.role === 'employee') ? user.role : 'employee',
-      employeeId: user.employeeId || user.employee_id || '',
-      position: user.position || '',
-      department: user.department || '',
-      hourlyRate: typeof user.hourlyRate === 'number' ? user.hourlyRate : 
-                 typeof user.hourly_rate === 'number' ? user.hourly_rate : 0,
-      phoneNumber: user.phoneNumber || user.phone_number || '',
-      avatar: user.avatar || user.avatar_url || '',
-      address: {
-        street: user.street || (user.address?.street || ''),
-        city: user.city || (user.address?.city || ''),
-        state: user.state || (user.address?.state || ''),
-        country: user.country || (user.address?.country || ''),
-        zipCode: user.zip_code || (user.address?.zipCode || '')
-      }
-    };
-    
-    return transformedUser;
-  } catch (error) {
-    console.error('Error transforming user:', error, user);
-    return null;
-  }
-}
 
-// Helper function to transform database models to frontend models
-export function transformUsers(users: any[]): User[] {
-  if (!Array.isArray(users)) {
-    console.error('Expected users to be an array but got:', typeof users);
-    return [];
+  if (!dbUser.id) {
+    console.error('User data missing required ID field:', dbUser);
+    throw new Error('User data missing required ID field');
   }
+
+  console.log(`Transforming user with ID ${dbUser.id}`);
   
-  console.log('Transforming users array of length:', users.length);
-  
-  const transformed = users
-    .map((user, index) => {
-      const result = transformUser(user);
-      if (!result) {
-        console.error(`Failed to transform user at index ${index}:`, user);
-      }
-      return result;
-    })
-    .filter((user): user is User => user !== null);
-  
-  console.log('Number of successfully transformed users:', transformed.length);
-  
-  return transformed;
-}
+  return {
+    id: dbUser.id,
+    email: dbUser.email || '',
+    firstName: dbUser.first_name || '',
+    lastName: dbUser.last_name || '',
+    role: dbUser.role || 'employee',
+    employeeId: dbUser.employee_id || '',
+    position: dbUser.position || '',
+    department: dbUser.department || '',
+    hourlyRate: dbUser.hourly_rate || 0,
+    phoneNumber: dbUser.phone_number || '',
+    avatar: dbUser.avatar_url || '',
+    address: {
+      street: dbUser.street || '',
+      city: dbUser.city || '',
+      state: dbUser.state || '',
+      country: dbUser.country || '',
+      zipCode: dbUser.zip_code || '',
+    }
+  };
+};
+
+/**
+ * Transform employee data from application format to database format
+ * @param user User data from application
+ * @returns Database user object
+ */
+export const transformToDbUser = (user: Partial<User>): Record<string, any> => {
+  return {
+    id: user.id,
+    email: user.email,
+    first_name: user.firstName,
+    last_name: user.lastName,
+    role: user.role || 'employee',
+    employee_id: user.employeeId,
+    position: user.position,
+    department: user.department,
+    hourly_rate: user.hourlyRate,
+    phone_number: user.phoneNumber,
+    avatar_url: user.avatar,
+    street: user.address?.street,
+    city: user.address?.city,
+    state: user.address?.state,
+    country: user.address?.country,
+    zip_code: user.address?.zipCode,
+  };
+};
