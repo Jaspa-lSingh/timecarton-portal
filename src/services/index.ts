@@ -1,6 +1,7 @@
 
 export * from './auth';
-export * from './employee';
+export * from './employeeService';
 export * from './payrollService';
-export * from './shiftService';
 export * from './timeEntryService';
+export * from './shiftService';
+export * from './shift/shiftAssignmentService';

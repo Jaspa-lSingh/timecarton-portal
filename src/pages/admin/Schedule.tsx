@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,8 +13,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { useEmployeeSearch } from '@/hooks/employees/useEmployeeSearch';
 import { toast } from '@/hooks/use-toast';
 import { format, addDays, parseISO } from 'date-fns';
+import { Link, useNavigate } from 'react-router-dom';
 
 const AdminSchedule: React.FC = () => {
+  const navigate = useNavigate();
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [currentWeek, setCurrentWeek] = useState<Date[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +27,6 @@ const AdminSchedule: React.FC = () => {
   const [assignShiftDialogOpen, setAssignShiftDialogOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   
-  // New shift form state
   const [newShift, setNewShift] = useState({
     employeeId: '',
     position: '',
@@ -37,7 +37,6 @@ const AdminSchedule: React.FC = () => {
     department: '',
   });
 
-  // Fetch employees
   const { data: employeeData, isLoading: isLoadingEmployees } = useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
@@ -50,11 +49,10 @@ const AdminSchedule: React.FC = () => {
   });
 
   const { filteredEmployees } = useEmployeeSearch(employeeData || []);
-  
+
   useEffect(() => {
-    // Generate the current week's dates
     const today = new Date();
-    const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentDay = today.getDay();
     const diff = today.getDate() - currentDay;
     
     const weekDates = [];
@@ -66,12 +64,11 @@ const AdminSchedule: React.FC = () => {
     
     setCurrentWeek(weekDates);
   }, []);
-  
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch shifts for the current week
         if (currentWeek.length > 0) {
           const startDate = formatDate(currentWeek[0]);
           const endDate = formatDate(currentWeek[6]);
@@ -92,26 +89,22 @@ const AdminSchedule: React.FC = () => {
       fetchData();
     }
   }, [currentWeek]);
-  
-  // Format date as YYYY-MM-DD
+
   const formatDate = (date: Date): string => {
     return date.toISOString().split('T')[0];
   };
-  
-  // Format date for display
+
   const formatDateDisplay = (date: Date): string => {
     return date.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric' 
     });
   };
-  
-  // Format day name
+
   const formatDayName = (date: Date): string => {
     return date.toLocaleDateString('en-US', { weekday: 'short' });
   };
-  
-  // Go to previous week
+
   const goToPreviousWeek = () => {
     const newWeek = currentWeek.map(date => {
       const newDate = new Date(date);
@@ -120,8 +113,7 @@ const AdminSchedule: React.FC = () => {
     });
     setCurrentWeek(newWeek);
   };
-  
-  // Go to next week
+
   const goToNextWeek = () => {
     const newWeek = currentWeek.map(date => {
       const newDate = new Date(date);
@@ -130,8 +122,7 @@ const AdminSchedule: React.FC = () => {
     });
     setCurrentWeek(newWeek);
   };
-  
-  // Get shifts for a specific day and employee
+
   const getShiftsForDay = (date: Date, employeeId?: string): Shift[] => {
     const dateString = formatDate(date);
     
@@ -145,14 +136,12 @@ const AdminSchedule: React.FC = () => {
       return shiftDate === dateString;
     });
     
-    // Apply position filter if selected
     if (selectedPosition !== 'all') {
       filteredShifts = filteredShifts.filter(shift => 
         shift.position?.toLowerCase() === selectedPosition.toLowerCase()
       );
     }
     
-    // Apply location filter if selected
     if (selectedLocation !== 'all') {
       filteredShifts = filteredShifts.filter(shift => 
         shift.location?.toLowerCase() === selectedLocation.toLowerCase()
@@ -161,25 +150,21 @@ const AdminSchedule: React.FC = () => {
     
     return filteredShifts;
   };
-  
-  // Format time for display
+
   const formatTime = (timeString: string): string => {
     const date = new Date(timeString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
-  
-  // Get employee name by ID
+
   const getEmployeeName = (id: string): string => {
     if (!employeeData) return 'Unknown';
     const employee = employeeData.find(emp => emp.id === id);
     return employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown';
   };
 
-  // Open assign shift dialog for a specific day
   const openAssignShiftDialog = (date: Date) => {
     setSelectedDay(date);
     
-    // Set default times (9 AM - 5 PM) for the selected day
     const dayString = formatDate(date);
     setNewShift({
       ...newShift,
@@ -190,7 +175,6 @@ const AdminSchedule: React.FC = () => {
     setAssignShiftDialogOpen(true);
   };
 
-  // Handle input change for new shift form
   const handleShiftInputChange = (field: string, value: string) => {
     setNewShift(prev => ({
       ...prev,
@@ -198,7 +182,6 @@ const AdminSchedule: React.FC = () => {
     }));
   };
 
-  // Handle form submission for new shift
   const handleCreateShift = async () => {
     if (!newShift.employeeId) {
       toast({
@@ -230,10 +213,8 @@ const AdminSchedule: React.FC = () => {
         return;
       }
       
-      // Update shifts list with the new shift
       setShifts(prev => [...prev, response.data!]);
       
-      // Close dialog and reset form
       setAssignShiftDialogOpen(false);
       setNewShift({
         employeeId: '',
@@ -258,7 +239,11 @@ const AdminSchedule: React.FC = () => {
       });
     }
   };
-  
+
+  const goToAssignShifts = () => {
+    navigate('/admin/assign-shifts');
+  };
+
   return (
     <AdminLayout>
       <div className="p-6">
@@ -273,14 +258,16 @@ const AdminSchedule: React.FC = () => {
               <Filter className="h-4 w-4" />
               <span>Filter</span>
             </Button>
-            <Button className="flex gap-2 items-center">
+            <Button 
+              className="flex gap-2 items-center"
+              onClick={goToAssignShifts}
+            >
               <Plus className="h-4 w-4" />
-              <span>Add Shift</span>
+              <span>Assign Shifts</span>
             </Button>
           </div>
         </div>
         
-        {/* Filters */}
         <Card className="mb-6">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row gap-4">
@@ -365,7 +352,6 @@ const AdminSchedule: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Week Navigation */}
         <div className="flex justify-between items-center mb-4">
           <Button 
             variant="outline"
@@ -394,9 +380,7 @@ const AdminSchedule: React.FC = () => {
           </Button>
         </div>
         
-        {/* Weekly Schedule */}
         <div className="bg-white border rounded-lg overflow-hidden">
-          {/* Day Headers */}
           <div className="grid grid-cols-7 border-b">
             {currentWeek.map((date, index) => (
               <div 
@@ -409,7 +393,6 @@ const AdminSchedule: React.FC = () => {
             ))}
           </div>
           
-          {/* Schedule Content */}
           <div className="grid grid-cols-7 min-h-[600px]">
             {currentWeek.map((date, index) => {
               const dayShifts = getShiftsForDay(date, selectedEmployee !== 'all' ? selectedEmployee : undefined);
@@ -468,7 +451,6 @@ const AdminSchedule: React.FC = () => {
         </div>
       </div>
 
-      {/* Assign Shift Dialog */}
       <Dialog open={assignShiftDialogOpen} onOpenChange={setAssignShiftDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
