@@ -2,13 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services';
-import LoginForm from '@/components/LoginForm';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle, Clock, Users, DollarSign, Calendar } from 'lucide-react';
+import { ArrowRight, CheckCircle, Clock, Users, DollarSign, Calendar, ShieldCheck, User } from 'lucide-react';
+import AdminLoginForm from '@/components/AdminLoginForm';
+import EmployeeLoginForm from '@/components/EmployeeLoginForm';
+import { UserRole } from '@/types';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [selectedRole, setSelectedRole] = useState<UserRole>('employee');
   
   useEffect(() => {
     const checkAuth = async () => {
@@ -70,7 +73,7 @@ const Login: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              ShiftWise
+              ShiftMaster
             </motion.h1>
             <motion.p 
               className="text-xl text-gray-600 max-w-md mx-auto"
@@ -82,24 +85,40 @@ const Login: React.FC = () => {
             </motion.p>
           </div>
           
-          <motion.div 
-            className="bg-white rounded-xl shadow-xl p-8 border border-gray-100"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Log In</h2>
-            <LoginForm />
+          <div className="flex justify-center space-x-4 mb-6">
+            <motion.button
+              className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
+                selectedRole === 'employee' 
+                  ? 'bg-white text-blue-600 shadow-md border border-blue-100' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedRole('employee')}
+            >
+              <User className="h-5 w-5" />
+              <span className="font-medium">Employee</span>
+            </motion.button>
             
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-500">
-                Only admin-created accounts can log in. Contact your administrator if you need access.
-              </p>
-            </div>
-          </motion.div>
+            <motion.button
+              className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
+                selectedRole === 'admin' 
+                  ? 'bg-slate-800 text-white shadow-md' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedRole('admin')}
+            >
+              <ShieldCheck className="h-5 w-5" />
+              <span className="font-medium">Administrator</span>
+            </motion.button>
+          </div>
+          
+          {selectedRole === 'admin' ? <AdminLoginForm /> : <EmployeeLoginForm />}
           
           <div className="mt-8 text-center text-sm text-gray-500">
-            <p>&copy; {new Date().getFullYear()} ShiftWise. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} ShiftMaster. All rights reserved.</p>
           </div>
         </div>
       </div>

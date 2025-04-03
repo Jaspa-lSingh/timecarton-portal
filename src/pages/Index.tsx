@@ -27,8 +27,8 @@ const Index = () => {
             navigate('/employee/dashboard');
           }
         } else {
-          // Redirect to home page if not logged in
-          navigate('/');
+          // Redirect to login page if not logged in
+          navigate('/login');
         }
       }, 1000);
     };
