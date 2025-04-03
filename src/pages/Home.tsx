@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Users, Clock, DollarSign, Calendar, Sparkles,
+  Users, Clock, DollarSign, Calendar,
   CheckCircle, ChevronRight, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -82,9 +82,9 @@ const Home = () => {
                               className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-brand-50 to-brand-100 p-6 no-underline outline-none focus:shadow-md"
                               href="#"
                             >
-                              <Sparkles className="h-6 w-6 text-brand-600" />
+                              <Calendar className="h-6 w-6 text-brand-600" />
                               <div className="mb-2 mt-4 text-lg font-medium text-brand-900">
-                                AI-Powered Scheduling
+                                Smart Scheduling
                               </div>
                               <p className="text-sm leading-tight text-brand-700">
                                 Advanced algorithms that optimize shifts based on employee availability, skills, and business needs.
@@ -262,7 +262,7 @@ const Home = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                AI-Powered Workforce Management
+                Advanced Workforce Management
               </motion.span>
               <motion.h1 
                 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6"
@@ -280,7 +280,7 @@ const Home = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
               >
-                ShiftMaster combines intelligent AI algorithms with intuitive design to create the perfect schedule for your team, while automating payroll management.
+                ShiftMaster combines smart scheduling algorithms with intuitive design to create the perfect schedule for your team, while automating payroll management.
               </motion.p>
               <motion.div 
                 className="flex flex-col sm:flex-row gap-4"
@@ -347,9 +347,9 @@ const Home = () => {
               visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
             }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Powered by AI, <span className="text-brand-600">Built for People</span></h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Powerful Features, <span className="text-brand-600">Built for Teams</span></h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              ShiftMaster leverages cutting-edge artificial intelligence to solve the most complex scheduling challenges while keeping the human experience at the center.
+              ShiftMaster solves the most complex scheduling challenges while keeping the human experience at the center.
             </p>
           </motion.div>
 
@@ -364,7 +364,7 @@ const Home = () => {
               {
                 icon: <Calendar className="h-10 w-10 text-brand-600" />,
                 title: "Smart Scheduling",
-                description: "AI algorithms that analyze past schedules, employee preferences, and business demands to create optimal shift assignments."
+                description: "Intuitive algorithms that analyze employee preferences and business demands to create optimal shift assignments."
               },
               {
                 icon: <Clock className="h-10 w-10 text-brand-600" />,
@@ -382,9 +382,9 @@ const Home = () => {
                 description: "Seamlessly export time data to your payroll system, with automatic calculation of regular and overtime hours."
               },
               {
-                icon: <Sparkles className="h-10 w-10 text-brand-600" />,
-                title: "AI Predictions",
-                description: "Forecasting tools that predict busy periods and staffing needs based on historical data and external factors."
+                icon: <Calendar className="h-10 w-10 text-brand-600" />,
+                title: "Forecasting Tools",
+                description: "Scheduling tools that predict busy periods and staffing needs based on historical data and external factors."
               },
               {
                 icon: <CheckCircle className="h-10 w-10 text-brand-600" />,
@@ -455,7 +455,7 @@ const Home = () => {
                 description: "Advanced features for growing businesses",
                 features: [
                   "Up to 50 employees",
-                  "AI-powered scheduling",
+                  "Advanced scheduling",
                   "Time tracking with geolocation",
                   "Payroll integration",
                   "Shift swapping",
@@ -470,7 +470,7 @@ const Home = () => {
                 description: "Custom solutions for large organizations",
                 features: [
                   "Unlimited employees",
-                  "Advanced AI scheduling",
+                  "Advanced scheduling",
                   "Custom integrations",
                   "Advanced reporting",
                   "Dedicated account manager",
@@ -552,7 +552,7 @@ const Home = () => {
           >
             {[
               {
-                quote: "ShiftMaster's AI scheduling has reduced our management time by 70% while improving employee satisfaction. It's been a game changer for our retail operation.",
+                quote: "ShiftMaster's scheduling has reduced our management time by 70% while improving employee satisfaction. It's been a game changer for our retail operation.",
                 author: "Sarah Johnson",
                 role: "Operations Manager, Retail Chain"
               },
@@ -628,7 +628,7 @@ const Home = () => {
                 <span className="text-lg font-bold text-white">ShiftMaster</span>
               </div>
               <p className="text-gray-400 mb-4">
-                Next-generation workforce management powered by AI.
+                Next-generation workforce management for modern teams.
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">
