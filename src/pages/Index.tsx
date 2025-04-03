@@ -27,10 +27,10 @@ const Index = () => {
             navigate('/employee/dashboard');
           }
         } else {
-          // Redirect to login if not logged in
-          navigate('/login');
+          // Redirect to home page if not logged in
+          navigate('/');
         }
-      }, 1500);
+      }, 1000);
     };
     
     checkAuthAndRedirect();
