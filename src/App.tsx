@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
@@ -10,7 +11,6 @@ import EmployeesPage from '@/pages/admin/Employees';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import NotFound from '@/pages/NotFound';
 import PayrollPage from '@/pages/admin/Payroll';
-import TimeClockPage from '@/pages/admin/TimeClock';
 import AssignShiftsPage from '@/pages/admin/AssignShifts';
 
 function App() {
@@ -23,20 +23,23 @@ function App() {
         <Route path="/home" element={<Home />} />
         
         {/* Admin Routes */}
-        <Route path="/admin" element={<ProtectedRoute role="admin" />}>
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="schedule" element={<AdminSchedule />} />
-          <Route path="assign-shifts" element={<AssignShiftsPage />} />
-          <Route path="employees" element={<EmployeesPage />} />
-          <Route path="payroll" element={<PayrollPage />} />
-          <Route path="time-clock" element={<TimeClockPage />} />
-        </Route>
+        <Route path="/admin" element={<ProtectedRoute allowedRole="admin">
+          <Routes>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="schedule" element={<AdminSchedule />} />
+            <Route path="assign-shifts" element={<AssignShiftsPage />} />
+            <Route path="employees" element={<EmployeesPage />} />
+            <Route path="payroll" element={<PayrollPage />} />
+          </Routes>
+        </ProtectedRoute>} />
         
         {/* Employee Routes */}
-        <Route path="/employee" element={<ProtectedRoute role="employee" />}>
-          {/* Add employee-specific routes here */}
-          <Route path="dashboard" element={<div>Employee Dashboard</div>} />
-        </Route>
+        <Route path="/employee" element={<ProtectedRoute allowedRole="employee">
+          <Routes>
+            {/* Add employee-specific routes here */}
+            <Route path="dashboard" element={<div>Employee Dashboard</div>} />
+          </Routes>
+        </ProtectedRoute>} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>

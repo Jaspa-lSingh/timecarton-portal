@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, addHours, parseISO } from 'date-fns';
@@ -12,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Users, CalendarIcon } from 'lucide-react';
 import { shiftAssignmentService } from '@/services';
 import { toast } from '@/hooks/use-toast';
-import { User } from '@/types';
+import { User, ShiftStatus } from '@/types';
 
 interface AssignShiftFormProps {
   onSuccess?: () => void;
@@ -103,7 +102,7 @@ const AssignShiftForm = ({ onSuccess, defaultDate = new Date() }: AssignShiftFor
       return;
     }
     
-    // Prepare shift data
+    // Prepare shift data with the correct ShiftStatus type
     const shiftData = {
       startTime: startDate,
       endTime: endDate,
@@ -112,7 +111,7 @@ const AssignShiftForm = ({ onSuccess, defaultDate = new Date() }: AssignShiftFor
       location,
       notes,
       requirements,
-      status: 'scheduled',
+      status: 'scheduled' as ShiftStatus,
     };
     
     setIsSubmitting(true);

@@ -1,5 +1,5 @@
 
-import { Shift, ApiResponse, User } from '@/types';
+import { Shift, ApiResponse, User, ShiftStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { authService } from '@/services';
 
@@ -167,7 +167,7 @@ function transformShift(shift: any): Shift {
     position: shift.position,
     department: shift.department,
     notes: shift.notes,
-    status: shift.status,
+    status: shift.status as ShiftStatus,
     location: shift.location,
     requirements: shift.requirements
   };
