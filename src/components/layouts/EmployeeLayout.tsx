@@ -23,7 +23,11 @@ const EmployeeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
     // Get user data
     const currentUser = authService.getCurrentUser();
     setUser(currentUser);
-  }, []);
+    
+    // Log for debugging
+    console.log("EmployeeLayout loaded with user:", currentUser);
+    console.log("Current location:", location.pathname);
+  }, [location.pathname]);
   
   const handleLogout = () => {
     authService.logout();
@@ -134,7 +138,7 @@ const EmployeeLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             )}
             
             <div className="flex-1 text-center font-medium text-lg hidden md:block">
-              Dashboard Overview
+              Employee Portal
             </div>
             
             <div className="flex items-center ml-auto">
