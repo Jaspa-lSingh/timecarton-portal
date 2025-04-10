@@ -14,6 +14,12 @@ import NotFound from '@/pages/NotFound';
 import PayrollPage from '@/pages/admin/Payroll';
 import AssignShiftsPage from '@/pages/admin/AssignShifts';
 import EmployeeDashboard from '@/pages/employee/Dashboard';
+import EmployeeSchedule from '@/pages/employee/Schedule';
+import EmployeePayroll from '@/pages/employee/Payroll';
+import EmployeeProfile from '@/pages/employee/Profile';
+import EmployeeInquiry from '@/pages/employee/Inquiry';
+import EmployeeShiftChanges from '@/pages/employee/ShiftChanges';
+import EmployeeTimeTracking from '@/pages/employee/TimeTracking';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -46,6 +52,12 @@ function App() {
             <ProtectedRoute allowedRole="employee">
               <Routes>
                 <Route path="dashboard" element={<EmployeeDashboard />} />
+                <Route path="schedule" element={<EmployeeSchedule />} />
+                <Route path="time" element={<EmployeeTimeTracking />} />
+                <Route path="inquiry" element={<EmployeeInquiry />} />
+                <Route path="profile" element={<EmployeeProfile />} />
+                <Route path="pay" element={<EmployeePayroll />} />
+                <Route path="shift-changes" element={<EmployeeShiftChanges />} />
               </Routes>
             </ProtectedRoute>
           } />

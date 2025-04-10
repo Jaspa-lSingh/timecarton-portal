@@ -2,9 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { authService } from '@/services';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { User } from '@/types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -20,6 +19,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredDepartment
 }) => {
   const location = useLocation();
+  const { toast } = useToast();
   const [isChecking, setIsChecking] = useState(true);
   const [isAllowed, setIsAllowed] = useState(false);
   const [redirectTo, setRedirectTo] = useState<string | null>(null);
