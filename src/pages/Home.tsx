@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -408,7 +407,50 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* New Preview Section */}
+      <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="container mx-auto px-4 sm:px-6">
+          <motion.div 
+            className="text-center mb-16"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+            }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Preview Our <span className="text-brand-600">Dashboard</span></h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Experience the power of ShiftMaster with our interactive dashboard preview.
+            </p>
+          </motion.div>
+
+          <motion.div 
+            className="relative rounded-xl overflow-hidden shadow-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent z-10"></div>
+            <img 
+              src="https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=2070&q=80" 
+              alt="Dashboard Preview" 
+              className="w-full h-auto"
+            />
+            <div className="absolute bottom-0 left-0 right-0 p-8 text-white z-20">
+              <h3 className="text-2xl font-bold mb-2">Streamlined Workforce Management</h3>
+              <p className="text-white/90 mb-4">Monitor, manage, and optimize your team's performance in real-time.</p>
+              <Button variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20">
+                Watch Demo
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Enhanced Pricing Section */}
       <section id="pricing" className="py-20 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6">
           <motion.div 
